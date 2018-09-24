@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -7,7 +8,6 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <resolv.h>
-#include <strings.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include "packet_handler.h"
@@ -30,8 +30,7 @@ void handle_alarm(int sig) {
 int main(int argc, char **argv)
 {
     signal(SIGALRM, handle_alarm);
-    int sockfd, connfd;
-    pid_t cpid;
+    int sockfd;
     struct sockaddr_in cliaddr, servaddr;
     socklen_t cliaddr_size = sizeof(cliaddr);
     bzero(&servaddr, sizeof(servaddr));

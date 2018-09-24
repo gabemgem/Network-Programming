@@ -156,7 +156,6 @@ int receive_rrq(){
         t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
         t.filebufferl = file_buffer_from_pos(&t);
         make_data();
-        t.timeout_count = 0;
         t.timed_out = 0;
     }
 
@@ -181,7 +180,6 @@ int receive_wrq(){
         make_err();
     }else{
         make_ack();
-        t.timeout_count = 0;
         t.timed_out = 0;
         t.blnum++;
     }
@@ -192,7 +190,6 @@ int receive_wrq(){
 int receive_data(){
 
     if (p.blnum == t.blnum){
-    	t.timeout_count = 0;
     	t.timed_out = 0;
         if (file_append_from_buffer(&p, &t) == -1){
             strcpy(t.errmes, ESTRING_2);
@@ -218,7 +215,6 @@ int receive_ack(){
 
     if (p.blnum == t.blnum){
         t.blnum++;
-        t.timeout_count = 0;
         t.timed_out = 0;
 
         if (t.file_open == 0 && (file_open_read(p.filename,
