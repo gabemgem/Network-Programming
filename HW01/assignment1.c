@@ -44,9 +44,15 @@ int main(int argc, char **argv)
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
 
-<<<<<<< HEAD
-    if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-        perror("Error binding");
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd<0) {
+        perror("Error opening socket");
+        exit(1);
+    }
+    if (bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1){
+      perror("bind");
+      exit(1);
     }
 
     struct sockaddr_in addr;
@@ -57,22 +63,9 @@ int main(int argc, char **argv)
     getsockname(sockfd, (struct sockaddr *) &addr, &addrlen);
     printf("%s\n", addr.sa_data);
     return 0;
-
-    printf("Waiting for connections");
-    //Listen(sockfd, LISTENQ);
-=======
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sockfd<0) {
-        perror("Error opening socket");
-        exit(1);
-    }
-    if (bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1){
-      perror("bind");
-      exit(1);
-    }
-    printf("%d\n", servaddr.sin_port);
+    
     printf("Waiting for connections\n");
->>>>>>> 135ef57089ec5d2ee6e0ca757bdfa3b0f8928226
+
     while(1)
     {
         char buf[PACKETSIZE];
