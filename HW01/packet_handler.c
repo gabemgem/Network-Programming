@@ -78,35 +78,23 @@ void parse_packet(packet* p, const char* pbuffer) {
 void packet_handler(packet* p, const char* pbuffer) {
 	parse_packet(p, pbuffer);	
 
-	if(*state==IS_STARTING) {
-		handle_request(p, pbuffer);
-		if(IS_RRQ(p.op)) {
-			*state = IS_WRITING;
-		}
-		else if(IS_WRQ(p.op)) {
-			*state = IS_READING;
-		}
-		else {
-			send_error(ECODE_4);
-		}
+	if(IS_RRQ(p.op)) {
+		receive_rrq();
 	}
-
-
-	else if(*state==IS_WRITING) {
-		if(IS_ACK(p.op)) {
-			send_data();
-		}
-		else {
-			handle_error();
-		}
+	else if(IS_WRQ(p.op)) {
+		receive_wrq();
 	}
-	else if(*state==IS_READING) {
-		if(IS_DAT(p.op)) {
-			send_ack();
-		}
-		else {
-			handle_error();
-		}
+	else if(IS_DAT(p.op)) {
+		receive_data();
+	}
+	else if(IS_ACK(p.op)) {
+		receive_ack();
+	}
+	else if(IS_ERR(p.op)) {
+		receive_err();
+	}
+	else {
+		receive_other();
 	}
 	
 }
@@ -140,7 +128,7 @@ void make_ack() {
 	make_packet(&op, sizeof(twobyte));
 }
 
-int packet_receive_rrq(){
+int receive_rrq(){
         
     if (t.file_open == 1){
         file_close(&t.filedata);
@@ -209,7 +197,7 @@ int receive_data(){
     return 0;
 }
 
-int packet_receive_ack(){
+int receive_ack(){
 
     if (p.blnum == t.blnum){
         t.blnum++;
@@ -236,12 +224,12 @@ int packet_receive_ack(){
     return 0;
 }
 
-int packet_receive_error(){
+int receive_err(){
     perror("Received error %i: %s\n",p.ecode, p.estring);
     return 1;
 }
 
-int packet_receive_invalid(){  
+int receive_other(){  
     t.errcode = ECODE_4;
     strcpy(t.errmes, ESTRING_4);
     make_error();
