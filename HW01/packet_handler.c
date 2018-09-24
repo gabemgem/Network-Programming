@@ -76,7 +76,7 @@ void parse_packet(const char* pbuffer) {
 }
 
 void packet_handler(const char* pbuffer) {
-	parse_packet(p, pbuffer);	
+	parse_packet(pbuffer);	
 
 	if(IS_RRQ(p.op)) {
 		receive_rrq();

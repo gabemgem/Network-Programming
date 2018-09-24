@@ -1,4 +1,6 @@
 
+#ifndef TFTP
+#define TFTP
 
 #define PACKETSIZE 516
 #define MAXDATA 512
@@ -86,3 +88,5 @@ int receive_data();
 int receive_ack();
 int receive_err();
 int receive_other();
+
+#endif

@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "packet_handler.h"
+#include "file_handler.h"
 
 
 int file_open_read(char *filename, int *filedata){
@@ -41,7 +42,7 @@ int file_open_write(char *filename, int *filedata){
 
 int file_append_from_buffer(packet *packet, transaction *transaction){
 
-    if ((write(transaction->filedata, packet->data, packet->data_length)) == -1){
+    if ((write(transaction->filedata, packet->data, packet->data_l)) == -1){
         fprintf(stderr, "%s\n",strerror(errno));
         return -1;
     }

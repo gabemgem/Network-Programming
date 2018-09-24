@@ -14,7 +14,6 @@
 
 #define BUFFSIZE 516
 #define sendrecvflag 0
-transaction t;
 
 /*int file_buffer(transaction_t *transaction) {
   if ((lseek(transaction->filedata, transaction->filepos, SEEK_SET)) == -1){
@@ -46,7 +45,7 @@ int main(int argc, char **argv) {
   //Listen(sockfd, LISTENQ);
   while(1){
     //connfd = Accept(listenfd, (SA*) &cliaddr, sizeof(cliaddr));
-    if (!fork){
+    if (!fork()){
       //Area to handle client
       char buf[BUFFSIZE];
       char databuff[0];
