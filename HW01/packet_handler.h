@@ -3,10 +3,6 @@
 #define PACKETSIZE 516
 #define MAXDATA 512
 
-#define IS_STARTING 0
-#define IS_READING 1
-#define IS_WRITING 2
-
 
 #define OP_RRQ 1
 #define OP_WRQ 2
@@ -77,3 +73,16 @@ typedef struct {
 	char errmes[64];
 	int errmes_l;
 }transaction;
+
+void parse_packet(const char* pbuffer);
+void packet_handler(const char* pbuffer);
+void make_packet(char* data, int data_l);
+void make_data();
+void make_err();
+void make_ack();
+int receive_rrq();
+int receive_wrq();
+int receive_data();
+int receive_ack();
+int receive_err();
+int receive_other();

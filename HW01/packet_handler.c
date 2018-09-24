@@ -12,7 +12,7 @@ twobyte block_num = 0;
 
 
 
-void parse_packet(packet* p, const char* pbuffer) {
+void parse_packet(const char* pbuffer) {
 	char c_op[2];
 	memcpy(c_op, pbuffer, sizeof(twobyte));
 	p.op = atoi(c_op);
@@ -75,7 +75,7 @@ void parse_packet(packet* p, const char* pbuffer) {
 	}
 }
 
-void packet_handler(packet* p, const char* pbuffer) {
+void packet_handler(const char* pbuffer) {
 	parse_packet(p, pbuffer);	
 
 	if(IS_RRQ(p.op)) {
