@@ -4,6 +4,7 @@
 #include "packet_handler.h"
 
 packet p;
+transaction t;
 char* out_packet[PACKETSIZE];
 int out_packet_length=0;
 twobyte block_num = 0;
@@ -74,7 +75,7 @@ void parse_packet(packet* p, const char* pbuffer) {
 	}
 }
 
-void packet_handler(packet* p, const char* pbuffer, int* state) {
+void packet_handler(packet* p, const char* pbuffer) {
 	parse_packet(p, pbuffer);	
 
 	if(*state==IS_STARTING) {
@@ -110,15 +111,139 @@ void packet_handler(packet* p, const char* pbuffer, int* state) {
 	
 }
 
-void make_packet(int type, char* data, int data_l) {
+void make_packet(char* data, int data_l) {
 	out_packet = realloc(out_packet, out_packet_length+data_l);
 	memmove(out_packet+out_packet_length, data, data_l);
 	out_packet_length+=data_l;
 }
 
-void make_data(packet* p, char* pbuffer) {
+void make_data() {
 	twobyte op = htons(3);
-	
-
+	twobyte block_num = htons(t.blnum);
+	make_packet(&op, sizeof(twobyte));
+	make_packet(&block_num, sizeof(twobyte));
+	make_packet(&t.filebuffer, t.filebufferl);
 }
 
+void make_err() {
+	twobyte op = htons(5);
+	twobyte errcode = t.errcode;
+	make_packet(&op, sizeof(twobyte));
+	make_packet(&errcode, sizeof(twobyte));
+	make_packet(&t.errmes, t.errmesl);
+}
+
+void make_ack() {
+	twobyte op = htons(4);
+	twobyte block_num = htons(t.blnum);
+	make_packet(&op, sizeof(twobyte));
+	make_packet(&op, sizeof(twobyte));
+}
+
+int packet_receive_rrq(){
+        
+    if (t.file_open == 1){
+        file_close(&t.filedata);
+    }
+    
+    if ((file_open_read(packet.filename,&t.filedata))== -1){
+        strcpy(t.errmes, ESTRING_1);
+        t.errcode = ECODE_1;
+        make_error();       
+    }else{
+        t.file_open = 1;
+        t.blnum = 1;
+        t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
+        t.filebufferl = file_buffer_from_pos(&t);
+        make_data();
+    }
+    
+    return 0;
+}
+
+int receive_wrq(){
+    
+    if (t.file_open == 0){ 
+    
+        if ((file_open_write(p.filename,&t.filedata)) == 0){
+            t.file_open = 1;
+            
+        }else{
+            t.file_open = 0;
+        }
+    }
+    
+    if (t.file_open == 0){
+        strcpy(t.estring, ESTRING_1);
+        t.ecode = ECODE_1;
+        make_error();       
+    }else{
+        make_ack();
+        t.blnum++;
+    }
+    
+    return 0;
+}
+
+int receive_data(){
+
+    if (p.blnum == t.blnum){
+    
+        if (file_append_from_buffer(&p, &t) == -1){
+            strcpy(t.errmes, ESTRING_2);
+            t.errcode = ECODE_2;
+            make_error();           
+        }
+        else{
+            make_ack();
+            t.blnum++;
+        }
+    }
+    
+    if (p.data_length < 512) {
+        file_close(&t.filedata);
+        t.file_open = 0;
+        t.complete = 1;
+    }
+    
+    return 0;
+}
+
+int packet_receive_ack(){
+
+    if (p.blnum == t.blnum){
+        t.blnum++;
+        t.timeout_count = 0;
+        
+        if (t.file_open == 0 && (file_open_read(p.filename,
+                &t.filedata)) == -1){
+            strcpy(t.errmes, ESTRING_2);
+            t.errcode = ECODE_2;
+            make_error();            
+        }
+        else{
+            t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
+            t.filebufferl = file_buffer_from_pos(&t);
+            if (!t.filebufferl) {
+                t.complete = 1;
+                return 1;               
+            } else {
+                make_data();
+            }
+        }
+    }
+    
+    return 0;
+}
+
+int packet_receive_error(){
+    perror("Received error %i: %s\n",p.ecode, p.estring);
+    return 1;
+}
+
+int packet_receive_invalid(){  
+    t.errcode = ECODE_4;
+    strcpy(t.errmes, ESTRING_4);
+    make_error();
+    return 0;
+}
