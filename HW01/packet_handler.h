@@ -58,7 +58,6 @@ typedef struct {
 }packet;
 
 typedef struct {
-	int timeout_count;
 	int timed_out;
 	int final;
 	int complete;

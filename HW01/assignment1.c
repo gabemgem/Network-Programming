@@ -38,14 +38,7 @@ int main(int argc, char **argv)
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
-    fd_set readfds, masterfds;
-    struct timeval timeout;
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-    FD_ZERO(&masterfds);
-    FD_SET(sockfd, &masterfds);
-
-    memcpy(&readfds, &masterfds, sizeof(fd_set));
+    
 
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
