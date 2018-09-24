@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <arpa/inet.h>
 #include "packet_handler.h"
 
 packet p;
@@ -61,13 +62,13 @@ void parse_packet(const char* pbuffer) {
 		p.errcode = atoi(c_ecode);
 
 		memset(p.errmes, 0, sizeof(p.errmes));
-		p.errmes_l=0;
+		int errmes_l=0;
 
-		while(*(pbuffer+(2*sizeof(twobyte))+p.errmes_l)!='0') {
-			(p.errmes)[p.errmes_l] = pbuffer[(2*sizeof(twobyte))+p.errmes_l];
-			p.errmes_l++;
+		while(*(pbuffer+(2*sizeof(twobyte))+errmes_l)!='0') {
+			(p.errmes)[errmes_l] = pbuffer[(2*sizeof(twobyte))+errmes_l];
+			errmes_l++;
 		}
-		(p.errmes)[p.errmes_l] = ' ';
+		(p.errmes)[errmes_l] = ' ';
 	}
 
 	else{
@@ -99,8 +100,8 @@ void packet_handler(const char* pbuffer) {
 	
 }
 
-void make_packet(char* data, int data_l) {
-	out_packet = realloc(out_packet, out_packet_length+data_l);
+void make_packet(void* data, int data_l) {
+	realloc(out_packet, out_packet_length+data_l);
 	memmove(out_packet+out_packet_length, data, data_l);
 	out_packet_length+=data_l;
 }
@@ -118,7 +119,7 @@ void make_err() {
 	twobyte errcode = t.errcode;
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&errcode, sizeof(twobyte));
-	make_packet(&t.errmes, t.errmesl);
+	make_packet(&t.errmes, strlen(t.errmes));
 }
 
 void make_ack() {
@@ -162,8 +163,8 @@ int receive_wrq(){
     }
     
     if (t.file_open == 0){
-        strcpy(t.estring, ESTRING_1);
-        t.ecode = ECODE_1;
+        strcpy(t.errmes, ESTRING_1);
+        t.errcode = ECODE_1;
         make_error();       
     }else{
         make_ack();
@@ -188,7 +189,7 @@ int receive_data(){
         }
     }
     
-    if (p.data_length < 512) {
+    if (p.data_l < 512) {
         file_close(&t.filedata);
         t.file_open = 0;
         t.complete = 1;
@@ -225,7 +226,7 @@ int receive_ack(){
 }
 
 int receive_err(){
-    perror("Received error %i: %s\n",p.ecode, p.estring);
+    fprintf(stderr, "Received error %i: %s\n",p.errcode, p.errmes);
     return 1;
 }
 
