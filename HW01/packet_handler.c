@@ -77,7 +77,7 @@ void parse_packet(const char* pbuffer) {
 }
 
 void packet_handler(const char* pbuffer) {
-	parse_packet(pbuffer);	
+	parse_packet(pbuffer);
 
 	if(IS_RRQ(p.op)) {
 		receive_rrq();
@@ -97,7 +97,7 @@ void packet_handler(const char* pbuffer) {
 	else {
 		receive_other();
 	}
-	
+
 }
 
 void make_packet(void* data, int data_l) {
@@ -130,15 +130,19 @@ void make_ack() {
 }
 
 int receive_rrq(){
-        
+
     if (t.file_open == 1){
         file_close(&t.filedata);
     }
-    
+
     if ((file_open_read(p.filename,&t.filedata))== -1){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
+<<<<<<< HEAD
         make_err();       
+=======
+        make_err();
+>>>>>>> d91e745fc9064dcba60f4aa630ae15c43a79acbf
     }else{
         t.file_open = 1;
         t.blnum = 1;
@@ -146,55 +150,55 @@ int receive_rrq(){
         t.filebufferl = file_buffer_from_pos(&t);
         make_data();
     }
-    
+
     return 0;
 }
 
 int receive_wrq(){
-    
-    if (t.file_open == 0){ 
-    
+
+    if (t.file_open == 0){
+
         if ((file_open_write(p.filename,&t.filedata)) == 0){
             t.file_open = 1;
-            
+
         }else{
             t.file_open = 0;
         }
     }
-    
+
     if (t.file_open == 0){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
-        make_error();       
+        make_err();
     }else{
         make_ack();
         t.blnum++;
     }
-    
+
     return 0;
 }
 
 int receive_data(){
 
     if (p.blnum == t.blnum){
-    
+
         if (file_append_from_buffer(&p, &t) == -1){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
-            make_error();           
+            make_err();
         }
         else{
             make_ack();
             t.blnum++;
         }
     }
-    
+
     if (p.data_l < 512) {
         file_close(&t.filedata);
         t.file_open = 0;
         t.complete = 1;
     }
-    
+
     return 0;
 }
 
@@ -203,25 +207,25 @@ int receive_ack(){
     if (p.blnum == t.blnum){
         t.blnum++;
         t.timeout_count = 0;
-        
+
         if (t.file_open == 0 && (file_open_read(p.filename,
                 &t.filedata)) == -1){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
-            make_error();            
+            make_err();
         }
         else{
             t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
             t.filebufferl = file_buffer_from_pos(&t);
             if (!t.filebufferl) {
                 t.complete = 1;
-                return 1;               
+                return 1;
             } else {
                 make_data();
             }
         }
     }
-    
+
     return 0;
 }
 
@@ -230,9 +234,9 @@ int receive_err(){
     return 1;
 }
 
-int receive_other(){  
+int receive_other(){
     t.errcode = ECODE_4;
     strcpy(t.errmes, ESTRING_4);
-    make_error();
+    make_err();
     return 0;
 }
