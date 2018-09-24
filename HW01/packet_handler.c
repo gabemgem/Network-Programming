@@ -185,7 +185,7 @@ int receive_wrq(){
 int receive_data(){
 
     if (p.blnum == t.blnum){
-
+    	t.timeout_count = 0;
         if (file_append_from_buffer(&p, &t) == -1){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
