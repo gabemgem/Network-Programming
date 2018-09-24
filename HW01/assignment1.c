@@ -15,6 +15,11 @@
 
 #define sendrecvflag 0
 
+extern packet p;
+extern transaction t;
+extern char* out_packet;
+extern int out_packet_length;
+
 void handle_alarm(int sig) {
     t.timeout_count++;
     if(t.timeout_count>=1) {
@@ -39,18 +44,26 @@ void handle_alarm(int sig) {
 int main(int argc, char **argv)
 {
     signal(SIGALRM, handle_alarm);
+
     int sockfd, connfd;
     pid_t cpid;
     struct sockaddr_in cliaddr, servaddr;
     socklen_t cliaddr_size = sizeof(cliaddr);
 
+    
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd<0) {
+        perror("Error opening socket");
+    }
+    
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+    printf("%d\n", servaddr.sin_port);
     printf("Waiting for connections");
     //Listen(sockfd, LISTENQ);
     while(1)

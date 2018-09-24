@@ -9,7 +9,6 @@ packet p;
 transaction t;
 char* out_packet;
 int out_packet_length=0;
-twobyte block_num = 0;
 
 
 
@@ -45,7 +44,7 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 
 		p.data_l=0;
 		memset(p.data, 0, sizeof(p.data));
-		while(p.data_l<buff_size-(s*sizeof(twobyte))) {
+		while(p.data_l<buff_size-(2*sizeof(twobyte))) {
 			(p.data)[p.data_l] = pbuffer[(2*sizeof(twobyte))+p.data_l];
 			p.data_l++;
 		}
