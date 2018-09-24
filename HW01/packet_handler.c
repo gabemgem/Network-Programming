@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include "packet_handler.h"
+#include "file_handler.h"
 
 packet p;
 transaction t;
-char* out_packet[PACKETSIZE];
+char* out_packet;
 int out_packet_length=0;
 twobyte block_num = 0;
 
@@ -102,6 +103,11 @@ void packet_handler(const char* pbuffer) {
 
 void make_packet(void* data, int data_l) {
 	out_packet = (char*)realloc(out_packet, out_packet_length+data_l);
+	if(out_packet==NULL) {
+		perror("Could not realloc out_packet");
+		exit(1);
+	}
+
 	memmove(out_packet+out_packet_length, data, data_l);
 	out_packet_length+=data_l;
 }
@@ -126,7 +132,7 @@ void make_ack() {
 	twobyte op = htons(4);
 	twobyte block_num = htons(t.blnum);
 	make_packet(&op, sizeof(twobyte));
-	make_packet(&op, sizeof(twobyte));
+	make_packet(&block_num, sizeof(twobyte));
 }
 
 int receive_rrq(){
