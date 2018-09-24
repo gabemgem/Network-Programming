@@ -12,7 +12,6 @@
 #include "file_handler.h"
 //#include "unp.h"
 
-#define BUFFSIZE 516
 #define sendrecvflag 0
 
 /*int file_buffer(transaction_t *transaction) {
@@ -33,6 +32,7 @@ int main(int argc, char **argv) {
   int sockfd, connfd;
   pid_t cpid;
   struct sockaddr_in cliaddr, servaddr;
+  socklen_t cliaddr_size = sizeof(cliaddr);
 
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
@@ -47,10 +47,10 @@ int main(int argc, char **argv) {
     //connfd = Accept(listenfd, (SA*) &cliaddr, sizeof(cliaddr));
     if (!fork()){
       //Area to handle client
-      char buf[BUFFSIZE];
+      char buf[PACKETSIZE];
       char databuff[0];
       int numbytes;
-      numbytes = recvfrom(sockfd, buf, BUFFSIZE, sendrecvflag, (struct sockaddr*) &cliaddr, sizeof(cliaddr));
+      numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr*) &cliaddr,&cliaddr_size);
       printf("%d, %s\n", numbytes, buf);
 
       //Process Packet for packet obj
