@@ -1,6 +1,6 @@
-//#include "unpv13e/lib/unp.h"
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
@@ -12,87 +12,99 @@
 #include "packet_handler.h"
 #include "file_handler.h"
 //#include "unp.h"
+transaction t;
 
 #define sendrecvflag 0
-
 extern packet p;
 extern transaction t;
 extern char* out_packet;
 extern int out_packet_length;
+char buf[PACKETSIZE];
 
 void handle_alarm(int sig) {
     t.timeout_count++;
     if(t.timeout_count>=1) {
         t.timed_out=1;
+
     }
 }
 
-/*int file_buffer(transaction_t *transaction) {
-  if ((lseek(transaction->filedata, transaction->filepos, SEEK_SET)) == -1){
-    printf(stderr, "%s\n", strerror(errno));
-    return -1;
-  }
-
-  if (int bytes_read = read(transaction->filedata, &transaction->filebuffer, 512) == -1) {
-    printf(stderr, "%s\n", strerror(errno));
-    return -1;
-  }
-  return bytes_read;
-}*/
 
 
 int main(int argc, char **argv)
 {
     signal(SIGALRM, handle_alarm);
-
     int sockfd, connfd;
     pid_t cpid;
     struct sockaddr_in cliaddr, servaddr;
     socklen_t cliaddr_size = sizeof(cliaddr);
-
-    
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(sockfd<0) {
-        perror("Error opening socket");
-    }
-    
+    printf("Hello World\n");
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
 
-    bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd<0) {
+        perror("Error opening socket");
+        exit(1);
+    }
+    if (bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1){
+      perror("bind");
+      exit(1);
+    }
     printf("%d\n", servaddr.sin_port);
-    printf("Waiting for connections");
-    //Listen(sockfd, LISTENQ);
+    printf("Waiting for connections\n");
     while(1)
     {
-        //connfd = Accept(listenfd, (SA*) &cliaddr, sizeof(cliaddr));
+        char buf[PACKETSIZE];
+        int numbytes;
+        numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+        printf("Connection has been made\n");
+        printf("%s\n", buf);
+        sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
         if (!fork())
         {
+            printf("Process has been forked!\n");
+            servaddr.sin_port = rand()%65535;
+            bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+            printf("%d\n", servaddr.sin_port);
+            printf("%d, %s\n", numbytes, buf);
+            packet_handler(buf, numbytes);
+            //sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+
             while(!t.complete)
             {
                 //Area to handle client
-                char buf[PACKETSIZE];
-                char databuff[0];
-                int numbytes;
-                numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
-                printf("%d, %s\n", numbytes, buf);
-
-                packet_handler(buf, numbytes);
                 //Process Packet for packet obj
-                //file_open_read(t.filename, t.filedata);
+                //file_open_read(t.filename, t.filedata
+
+                sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+                printf("Packet: %s", buf);
+                alarm(10);
+
+                numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+                printf("Packet: %s", buf);
+                packet_handler(buf, numbytes);
+
+
 
             }
+            close(sockfd);
+            return 0;
         }
     }
+    return 0;
 }
 
 
-//Request to read or write file, request connection
-//If granted access, connection is opened
-//File sent in fixed length blocks of 512 bytes
-//Data packet of less than 512 bytes signifies transfer opened
+/*
+Server listens on random socket port
+Client sends request
+fork
+Server sends udp with new source and destination ports
+Client attaches to new port
 
-//TFTP header consists of a 2 byte opcode field which indicates packet type
+
+
+*/
