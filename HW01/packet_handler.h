@@ -72,10 +72,11 @@ typedef struct {
 	twobyte blnum;
 	twobyte errcode;
 	char errmes[64];
+	int packet_ready;
 }transaction;
 
-void parse_packet(const char* pbuffer);
-void packet_handler(const char* pbuffer);
+void parse_packet(const char* pbuffer, const int buff_size);
+void packet_handler(const char* pbuffer, const int buff_size);
 void make_packet(void* data, int data_l);
 void make_data();
 void make_err();

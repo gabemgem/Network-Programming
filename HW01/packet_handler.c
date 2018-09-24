@@ -14,7 +14,7 @@ twobyte block_num = 0;
 
 
 
-void parse_packet(const char* pbuffer) {
+void parse_packet(const char* pbuffer, const int buff_size) {
 	char c_op[2];
 	memcpy(c_op, pbuffer, sizeof(twobyte));
 	p.op = atoi(c_op);
@@ -45,7 +45,7 @@ void parse_packet(const char* pbuffer) {
 
 		p.data_l=0;
 		memset(p.data, 0, sizeof(p.data));
-		while(*(pbuffer+(2*sizeof(twobyte))+p.data_l)!=NULL) {
+		while(p.data_l<buff_size-(s*sizeof(twobyte))) {
 			(p.data)[p.data_l] = pbuffer[(2*sizeof(twobyte))+p.data_l];
 			p.data_l++;
 		}
@@ -77,8 +77,9 @@ void parse_packet(const char* pbuffer) {
 	}
 }
 
-void packet_handler(const char* pbuffer) {
-	parse_packet(pbuffer);
+void packet_handler(const char* pbuffer, const int buff_size) {
+	t.packet_ready = 0;
+	parse_packet(pbuffer, buff_size);
 
 	if(IS_RRQ(p.op)) {
 		receive_rrq();
@@ -118,6 +119,7 @@ void make_data() {
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&block_num, sizeof(twobyte));
 	make_packet(&t.filebuffer, t.filebufferl);
+	t.packet_ready = 1;
 }
 
 void make_err() {
@@ -126,6 +128,7 @@ void make_err() {
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&errcode, sizeof(twobyte));
 	make_packet(&t.errmes, strlen(t.errmes));
+	t.packet_ready = 1;
 }
 
 void make_ack() {
@@ -133,6 +136,7 @@ void make_ack() {
 	twobyte block_num = htons(t.blnum);
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&block_num, sizeof(twobyte));
+	t.packet_ready = 1;
 }
 
 int receive_rrq(){
@@ -153,6 +157,8 @@ int receive_rrq(){
         t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
         t.filebufferl = file_buffer_from_pos(&t);
         make_data();
+        t.timeout_count = 0;
+        t.timed_out = 0;
     }
 
     return 0;
@@ -176,6 +182,8 @@ int receive_wrq(){
         make_err();
     }else{
         make_ack();
+        t.timeout_count = 0;
+        t.timed_out = 0;
         t.blnum++;
     }
 
@@ -186,6 +194,7 @@ int receive_data(){
 
     if (p.blnum == t.blnum){
     	t.timeout_count = 0;
+    	t.timed_out = 0;
         if (file_append_from_buffer(&p, &t) == -1){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
@@ -211,6 +220,7 @@ int receive_ack(){
     if (p.blnum == t.blnum){
         t.blnum++;
         t.timeout_count = 0;
+        t.timed_out = 0;
 
         if (t.file_open == 0 && (file_open_read(p.filename,
                 &t.filedata)) == -1){

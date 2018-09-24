@@ -8,11 +8,19 @@
 #include <resolv.h>
 #include <strings.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include "packet_handler.h"
 #include "file_handler.h"
 //#include "unp.h"
 
 #define sendrecvflag 0
+
+void handle_alarm(int sig) {
+    t.timeout_count++;
+    if(t.timeout_count>=1) {
+        t.timed_out=1;
+    }
+}
 
 /*int file_buffer(transaction_t *transaction) {
   if ((lseek(transaction->filedata, transaction->filepos, SEEK_SET)) == -1){
@@ -28,37 +36,44 @@
 }*/
 
 
-int main(int argc, char **argv) {
-  int sockfd, connfd;
-  pid_t cpid;
-  struct sockaddr_in cliaddr, servaddr;
-  socklen_t cliaddr_size = sizeof(cliaddr);
+int main(int argc, char **argv)
+{
+    signal(SIGALRM, handle_alarm);
+    int sockfd, connfd;
+    pid_t cpid;
+    struct sockaddr_in cliaddr, servaddr;
+    socklen_t cliaddr_size = sizeof(cliaddr);
 
-  bzero(&servaddr, sizeof(servaddr));
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-  servaddr.sin_port = 0;
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    servaddr.sin_port = 0;
 
-  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  bind(sockfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
-  printf("Waiting for connections");
-  //Listen(sockfd, LISTENQ);
-  while(1){
-    //connfd = Accept(listenfd, (SA*) &cliaddr, sizeof(cliaddr));
-    if (!fork()){
-      //Area to handle client
-      char buf[PACKETSIZE];
-      char databuff[0];
-      int numbytes;
-      numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr*) &cliaddr,&cliaddr_size);
-      printf("%d, %s\n", numbytes, buf);
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
+    printf("Waiting for connections");
+    //Listen(sockfd, LISTENQ);
+    while(1)
+    {
+        //connfd = Accept(listenfd, (SA*) &cliaddr, sizeof(cliaddr));
+        if (!fork())
+        {
+            while(!t.complete)
+            {
+                //Area to handle client
+                char buf[PACKETSIZE];
+                char databuff[0];
+                int numbytes;
+                numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+                printf("%d, %s\n", numbytes, buf);
 
-      //Process Packet for packet obj
-      //file_open_read(t.filename, t.filedata);
+                packet_handler(buf, numbytes);
+                //Process Packet for packet obj
+                //file_open_read(t.filename, t.filedata);
 
-
+            }
+        }
     }
-  }
 }
 
 
