@@ -18,7 +18,7 @@ int file_open_read(char *filename, int *filedata){
     }
 }
 
-int file_buffer_from_pos(transaction_t *transaction){
+int file_buffer_from_pos(transaction *transaction){
 
     if ((lseek(transaction->filedata, transaction->filepos, SEEK_SET)) == -1){
         fprintf(stderr, "%s\n",strerror(errno));
@@ -39,7 +39,7 @@ int file_open_write(char *filename, int *filedata){
     return 0;
 }
 
-int file_append_from_buffer(packet_t *packet, transaction_t *transaction){
+int file_append_from_buffer(packet *packet, transaction *transaction){
 
     if ((write(transaction->filedata, packet->data, packet->data_length)) == -1){
         fprintf(stderr, "%s\n",strerror(errno));

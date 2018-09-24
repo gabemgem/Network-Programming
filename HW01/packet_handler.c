@@ -134,7 +134,7 @@ int receive_rrq(){
         file_close(&t.filedata);
     }
     
-    if ((file_open_read(packet.filename,&t.filedata))== -1){
+    if ((file_open_read(p.filename,&t.filedata))== -1){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
         make_error();       
