@@ -138,12 +138,10 @@ int receive_rrq(){
     if ((file_open_read(p.filename,&t.filedata))== -1){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
-<<<<<<< HEAD
-        make_err();       
-=======
+
         make_err();
->>>>>>> d91e745fc9064dcba60f4aa630ae15c43a79acbf
-    }else{
+    }
+    else{
         t.file_open = 1;
         t.blnum = 1;
         t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
