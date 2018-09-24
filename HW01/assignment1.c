@@ -62,8 +62,19 @@ int main(int argc, char **argv)
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
 
-    bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
-    printf("%d\n", servaddr.sin_port);
+    if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
+        perror("Error binding");
+    }
+
+    struct sockaddr_in addr;
+    unsigned int myPort;
+    char myIP[16];
+    bzero(&addr, sizeof(addr));
+    int addrlen = sizeof(addr);
+    getsockname(sockfd, (struct sockaddr *) &addr, &addrlen);
+    printf("%s\n", addr.sa_data);
+    return 0;
+
     printf("Waiting for connections");
     //Listen(sockfd, LISTENQ);
     while(1)
