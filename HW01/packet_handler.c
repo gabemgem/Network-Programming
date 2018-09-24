@@ -9,14 +9,20 @@ packet p;
 transaction t;
 char* out_packet;
 int out_packet_length=0;
-
+char in_packet[PACKETSIZE];
+int in_packet_length;
 
 
 
 void parse_packet(const char* pbuffer, const int buff_size) {
+	for(int i=0; i<buff_size; ++i) {
+		printf("%c\n", pbuffer[i]);
+	}
+
 	char c_op[2];
 	memcpy(c_op, pbuffer, sizeof(twobyte));
 	p.op = atoi(c_op);
+	
 
 	if(IS_RRQ(p.op) || IS_WRQ(p.op)) {
 		int filenamel = 0;
@@ -72,6 +78,7 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 	}
 
 	else{
+		printf("OP: %d\n", p.op);
 		perror("Improper packet received.\n");
 	}
 }

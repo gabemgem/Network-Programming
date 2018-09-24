@@ -19,7 +19,8 @@ extern packet p;
 extern transaction t;
 extern char* out_packet;
 extern int out_packet_length;
-char buf[PACKETSIZE];
+extern char in_packet[PACKETSIZE];
+extern int in_packet_length;
 
 void handle_alarm(int sig) {
     t.timed_out=1;
@@ -64,13 +65,23 @@ int main(int argc, char **argv)
 
     while(1)
     {
-        char buf[PACKETSIZE];
-        int numbytes;
-        numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+        
+        in_packet_length = recvfrom(sockfd, in_packet, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
         printf("Connection has been made\n");
         
         if (!fork())
         {
+            t.timed_out = 0;
+            t.final = 0;
+            t.complete = 0;
+            t.file_open = 0;
+            t.filepos = 0;
+            t.filedata = 0;
+            t.filebufferl = 0;
+            t.blnum = 0;
+            t.errcode = 0;
+            t.packet_ready = 0;
+
             printf("Process has been forked!\n");
 
             sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -104,18 +115,18 @@ int main(int argc, char **argv)
                 //Area to handle client
                 //Process Packet for packet obj
                 //file_open_read(t.filename, t.filedata
-
-                packet_handler(buf, numbytes);
+                printf("Packet: %s", in_packet);
+                packet_handler(in_packet, in_packet_length);
                 while(!t.packet_ready);
                 sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
-                printf("Packet: %s", buf);
+                
                 received = 0;
                 t.timed_out = 0;
                 alarm(10);
                 
                 while(!received) {
                     if(t.timed_out==1) {
-                        perror("Timed out");
+                        perror("Timed out1");
                         close(sockfd);
                         return 0;
                     }
@@ -126,7 +137,7 @@ int main(int argc, char **argv)
                     }
 
                     if(FD_ISSET(sockfd, &readfds)) {
-                        numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+                        in_packet_length = recvfrom(sockfd, in_packet, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
                         received=1;
                     }
                     
@@ -134,8 +145,6 @@ int main(int argc, char **argv)
                         sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
                     }
                 }
-                printf("Packet: %s", buf);
-                packet_handler(buf, numbytes);
 
 
 
