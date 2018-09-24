@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <resolv.h>
 #include <strings.h>
@@ -12,7 +13,6 @@
 #include "packet_handler.h"
 #include "file_handler.h"
 //#include "unp.h"
-transaction t;
 
 #define sendrecvflag 0
 extern packet p;
@@ -22,11 +22,7 @@ extern int out_packet_length;
 char buf[PACKETSIZE];
 
 void handle_alarm(int sig) {
-    t.timeout_count++;
-    if(t.timeout_count>=1) {
-        t.timed_out=1;
-
-    }
+    t.timed_out=1;
 }
 
 
@@ -38,11 +34,18 @@ int main(int argc, char **argv)
     pid_t cpid;
     struct sockaddr_in cliaddr, servaddr;
     socklen_t cliaddr_size = sizeof(cliaddr);
-    printf("Hello World\n");
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
+    fd_set readfds, masterfds;
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    FD_ZERO(&masterfds);
+    FD_SET(sockfd, &masterfds);
+
+    memcpy(&readfds, &masterfds, sizeof(fd_set));
 
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -51,19 +54,18 @@ int main(int argc, char **argv)
         exit(1);
     }
     if (bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1){
-      perror("bind");
+      perror("Error binding");
       exit(1);
     }
 
     struct sockaddr_in addr;
     unsigned int myPort;
-    char myIP[16];
     bzero(&addr, sizeof(addr));
-    int addrlen = sizeof(addr);
+    socklen_t addrlen = sizeof(addr);
     getsockname(sockfd, (struct sockaddr *) &addr, &addrlen);
-    printf("%s\n", addr.sa_data);
-    return 0;
-    
+    myPort = ntohs(addr.sin_port);
+    printf("%u\n", myPort);
+
     printf("Waiting for connections\n");
 
     while(1)
@@ -72,17 +74,28 @@ int main(int argc, char **argv)
         int numbytes;
         numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
         printf("Connection has been made\n");
-        printf("%s\n", buf);
-        sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+        
         if (!fork())
         {
+            int received = 0;
+            fd_set readfds, masterfds;
+            struct timeval timeout;
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+            FD_ZERO(&masterfds);
+            FD_SET(sockfd, &masterfds);
+
+            memcpy(&readfds, &masterfds, sizeof(fd_set));
+
+            printf("%s\n", buf);
+            sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
             printf("Process has been forked!\n");
             servaddr.sin_port = rand()%65535;
-            bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
-            printf("%d\n", servaddr.sin_port);
-            printf("%d, %s\n", numbytes, buf);
-            packet_handler(buf, numbytes);
-            //sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+            if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr))<0) {
+                perror("Error on second bind");
+                exit(1);
+            }
+            
 
             while(!t.complete)
             {
@@ -90,11 +103,35 @@ int main(int argc, char **argv)
                 //Process Packet for packet obj
                 //file_open_read(t.filename, t.filedata
 
-                sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+                packet_handler(buf, numbytes);
+                while(!t.packet_ready);
+                sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
                 printf("Packet: %s", buf);
+                received = 0;
+                t.timed_out = 0;
                 alarm(10);
+                
+                while(!received) {
+                    if(t.timed_out==1) {
+                        perror("Timed out");
+                        close(sockfd);
+                        return 0;
+                    }
 
-                numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+                    if(select(sockfd+1, &readfds, NULL, NULL, &timeout)<0) {
+                        perror("Error on select");
+                        exit(1);
+                    }
+
+                    if(FD_ISSET(sockfd, &readfds)) {
+                        numbytes = recvfrom(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
+                        received=1;
+                    }
+                    
+                    else {
+                        sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+                    }
+                }
                 printf("Packet: %s", buf);
                 packet_handler(buf, numbytes);
 
