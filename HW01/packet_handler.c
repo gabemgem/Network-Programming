@@ -101,7 +101,7 @@ void packet_handler(const char* pbuffer) {
 }
 
 void make_packet(void* data, int data_l) {
-	realloc(out_packet, out_packet_length+data_l);
+	out_packet = (char*)realloc(out_packet, out_packet_length+data_l);
 	memmove(out_packet+out_packet_length, data, data_l);
 	out_packet_length+=data_l;
 }
@@ -138,7 +138,7 @@ int receive_rrq(){
     if ((file_open_read(p.filename,&t.filedata))== -1){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
-        make_error();       
+        make_err();       
     }else{
         t.file_open = 1;
         t.blnum = 1;
