@@ -33,10 +33,7 @@ int main(int argc, char **argv)
     int sockfd;
     struct sockaddr_in cliaddr, servaddr;
     socklen_t cliaddr_size = sizeof(cliaddr);
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_port = 0;
+    
     
 
 
@@ -45,6 +42,11 @@ int main(int argc, char **argv)
         perror("Error opening socket");
         exit(1);
     }
+
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    servaddr.sin_port = 0;
     if (bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1){
       perror("Error binding");
       exit(1);
@@ -69,6 +71,23 @@ int main(int argc, char **argv)
         
         if (!fork())
         {
+            printf("Process has been forked!\n");
+
+            sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+            if(sockfd<0) {
+                perror("Error opening socket 2");
+                exit(1);
+            }
+
+            bzero(&servaddr, sizeof(servaddr));
+            servaddr.sin_family = AF_INET;
+            servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+            servaddr.sin_port = htons(rand()%65535);
+            if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr)) == -1) {
+                perror("Error on second bind");
+                exit(1);
+            }
+
             int received = 0;
             fd_set readfds, masterfds;
             struct timeval timeout;
@@ -79,15 +98,6 @@ int main(int argc, char **argv)
 
             memcpy(&readfds, &masterfds, sizeof(fd_set));
 
-            printf("%s\n", buf);
-            sendto(sockfd, buf, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
-            printf("Process has been forked!\n");
-            servaddr.sin_port = rand()%65535;
-            if(bind(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr))<0) {
-                perror("Error on second bind");
-                exit(1);
-            }
-            
 
             while(!t.complete)
             {
