@@ -3,6 +3,10 @@
 #define PACKETSIZE 516
 #define MAXDATA 512
 
+#define IS_STARTING 0
+#define IS_READING 1
+#define IS_WRITING 2
+
 
 #define OP_RRQ 1
 #define OP_WRQ 2
@@ -55,3 +59,21 @@ typedef struct {
 	char errmes[PACKETSIZE];
 	int errmes_l;
 }packet;
+
+typedef struct {
+	int timeout_count;
+	int timed_out;
+	int final;
+	int complete;
+	int tid;
+	int file_open;
+	int filepos;
+	int filedata;
+	char filebuffer[MAXDATA];
+	int filebufferl;
+	char mode[PACKETSIZE];
+	twobyte blnum;
+	twobyte errcode;
+	char errmes[64];
+	int errmes_l;
+}transaction;

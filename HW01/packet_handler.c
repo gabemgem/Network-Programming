@@ -116,8 +116,9 @@ void make_packet(int type, char* data, int data_l) {
 	out_packet_length+=data_l;
 }
 
-void send_data(packet* p, char* pbuffer) {
+void make_data(packet* p, char* pbuffer) {
 	twobyte op = htons(3);
+	
 
 }
 
