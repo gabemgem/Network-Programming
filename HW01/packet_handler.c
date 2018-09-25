@@ -15,13 +15,10 @@ int in_packet_length;
 
 
 void parse_packet(const char* pbuffer, const int buff_size) {
-	for(int i=0; i<buff_size; ++i) {
-		printf("%c\n", pbuffer[i]);
-	}
-
-	char c_op[2];
-	memcpy(c_op, pbuffer, sizeof(twobyte));
-	p.op = atoi(c_op);
+	
+	memmove(&p.op, pbuffer, sizeof(twobyte));
+	p.op = ntohs(p.op);
+	
 	
 
 	if(IS_RRQ(p.op) || IS_WRQ(p.op)) {
@@ -78,7 +75,6 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 	}
 
 	else{
-		printf("OP: %d\n", p.op);
 		perror("Improper packet received.\n");
 	}
 }
@@ -213,6 +209,7 @@ int receive_data(){
         file_close(&t.filedata);
         t.file_open = 0;
         t.complete = 1;
+        printf("Completing receive\n");
     }
 
     return 0;
@@ -235,7 +232,7 @@ int receive_ack(){
             t.filebufferl = file_buffer_from_pos(&t);
             if (!t.filebufferl) {
                 t.complete = 1;
-                return 1;
+                printf("Completing send\n");
             } else {
                 make_data();
             }

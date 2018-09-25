@@ -71,6 +71,9 @@ int main(int argc, char **argv)
         
         if (!fork())
         {
+            int pid = getpid();
+            srand((unsigned int)pid);
+
             t.timed_out = 0;
             t.final = 0;
             t.complete = 0;
@@ -99,6 +102,14 @@ int main(int argc, char **argv)
                 exit(1);
             }
 
+            struct sockaddr_in addr;
+            unsigned int myPort;
+            bzero(&addr, sizeof(addr));
+            socklen_t addrlen = sizeof(addr);
+            getsockname(sockfd, (struct sockaddr *) &addr, &addrlen);
+            myPort = ntohs(addr.sin_port);
+            printf("Rebound to port %u\n", myPort);
+
             int received = 0;
             fd_set readfds, masterfds;
             struct timeval timeout;
@@ -115,11 +126,13 @@ int main(int argc, char **argv)
                 //Area to handle client
                 //Process Packet for packet obj
                 //file_open_read(t.filename, t.filedata
-                printf("Packet: %s", in_packet);
                 packet_handler(in_packet, in_packet_length);
+                printf("In packet handled\n");
                 while(!t.packet_ready);
+                printf("Out packet ready\n");
                 sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
-                
+                printf("Out packet sent\n");
+
                 received = 0;
                 t.timed_out = 0;
                 alarm(10);
@@ -139,10 +152,12 @@ int main(int argc, char **argv)
                     if(FD_ISSET(sockfd, &readfds)) {
                         in_packet_length = recvfrom(sockfd, in_packet, PACKETSIZE, sendrecvflag, (struct sockaddr *) &cliaddr, &cliaddr_size);
                         received=1;
+                        printf("Reply received\n");
                     }
                     
                     else {
                         sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
+                        printf("Out packet resent\n");
                     }
                 }
 
@@ -150,6 +165,7 @@ int main(int argc, char **argv)
 
             }
             close(sockfd);
+            printf("Closed the socket\n");
             return 0;
         }
     }
