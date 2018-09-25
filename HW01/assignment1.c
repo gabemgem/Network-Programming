@@ -135,7 +135,7 @@ int main(int argc, char **argv)
                 t.timed_out = 0;
                 alarm(10);
                 
-                while(!received) {
+                while(!received && !t.complete) {
                     if(t.timed_out==1) {
                         perror("Timed out1");
                         close(sockfd);
