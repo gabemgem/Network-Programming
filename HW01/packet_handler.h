@@ -55,6 +55,7 @@ typedef struct {
 	twobyte blnum;
 	twobyte errcode;
 	char errmes[PACKETSIZE];
+	int errmes_l;
 }packet;
 
 typedef struct {

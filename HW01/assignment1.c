@@ -127,9 +127,7 @@ int main(int argc, char **argv)
                 //Process Packet for packet obj
                 //file_open_read(t.filename, t.filedata
                 packet_handler(in_packet, in_packet_length);
-                printf("In packet handled\n");
-                while(!t.packet_ready);
-                printf("Out packet ready\n");
+                
                 sendto(sockfd, out_packet, out_packet_length, sendrecvflag, (struct sockaddr *) &cliaddr, cliaddr_size);
                 printf("Out packet sent\n");
 
@@ -160,6 +158,7 @@ int main(int argc, char **argv)
                         printf("Out packet resent\n");
                     }
                 }
+                printf("\n\n");
 
 
 

@@ -51,7 +51,7 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 	else if(IS_DAT(p.op)) {
 		memcpy(&p.blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
 		p.blnum = ntohs(p.blnum);
-		printf("Finished getting block num into packet\n");
+		printf("Finished getting block num into packet: %u\n", p.blnum);
 		/*
 		char c_blnum[2];
 		memcpy(c_blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
@@ -71,12 +71,21 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 	}
 
 	else if(IS_ACK(p.op)) {
+		memcpy(&p.blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
+		p.blnum = ntohs(p.blnum);
+		/*
 		char c_blnum[2];
 		memcpy(c_blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
 		p.blnum = atoi(c_blnum);
+		*/
 	}
 
 	else if(IS_ERR(p.op)) {
+		memcpy(&p.errcode, pbuffer+sizeof(twobyte), sizeof(twobyte));
+		p.errcode = ntohs(p.errcode);
+		p.errmes_l = buff_size - (2*sizeof(twobyte));
+		memcpy(p.errmes, pbuffer+(2*sizeof(twobyte)), p.errmes_l);
+		/*
 		char c_ecode[2];
 		memcpy(c_ecode, pbuffer+sizeof(twobyte), sizeof(twobyte));
 		p.errcode = atoi(c_ecode);
@@ -89,6 +98,7 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 			errmes_l++;
 		}
 		(p.errmes)[errmes_l] = ' ';
+		*/
 	}
 
 	else{
@@ -119,6 +129,8 @@ void packet_handler(const char* pbuffer, const int buff_size) {
 	else {
 		receive_other();
 	}
+	printf("Out packet ready\n");
+	printf("Block num: %u\n", t.blnum-1);
 
 }
 
@@ -159,7 +171,17 @@ void make_err() {
 	t.packet_ready = 1;
 }
 
+void clear_out_packet() {
+	if(out_packet_length>0) {
+		free(out_packet);
+		out_packet_length=0;
+		out_packet = NULL;
+	}
+}
+
 int receive_rrq(){
+
+	clear_out_packet();
 
     if (t.file_open == 1){
         file_close(&t.filedata);
@@ -177,13 +199,16 @@ int receive_rrq(){
         t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
         t.filebufferl = file_buffer_from_pos(&t);
         make_data();
-        t.timed_out = 0;
+        t.blnum++;
+        
     }
 
     return 0;
 }
 
 int receive_wrq(){
+
+    clear_out_packet();
 
     if (t.file_open == 0){
 
@@ -200,8 +225,9 @@ int receive_wrq(){
         t.errcode = ECODE_1;
         make_err();
     }else{
+    	t.blnum = 0;
         make_ack();
-        t.timed_out = 0;
+        
         t.blnum++;
     }
 
@@ -211,30 +237,26 @@ int receive_wrq(){
 int receive_data(){
 
     if (p.blnum == t.blnum){
-    	t.timed_out = 0;
+    	
         if (file_append_from_buffer(&p, &t) == -1){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
+            clear_out_packet();
             make_err();
         }
         else{
+        	clear_out_packet();
             make_ack();
             t.blnum++;
+            
         }
     }
 
     if (p.data_l < 512) {
-    	if(file_append_from_buffer(&p, &t)==-1) {
-    		strcpy(t.errmes, ESTRING_2);
-            t.errcode = ECODE_2;
-            make_err();
-    	}
-    	else { 
-	        file_close(&t.filedata);
-	        t.file_open = 0;
-	        t.complete = 1;
-	        printf("Completing receive\n");
-	    }
+        file_close(&t.filedata);
+        t.file_open = 0;
+        t.complete = 1;
+        printf("Completing receive\n");
     }
 
     return 0;
@@ -244,7 +266,8 @@ int receive_ack(){
 
     if (p.blnum == t.blnum){
         t.blnum++;
-        t.timed_out = 0;
+        clear_out_packet();
+        
 
         if (t.file_open == 0 && (file_open_read(p.filename,
                 &t.filedata)) == -1){
