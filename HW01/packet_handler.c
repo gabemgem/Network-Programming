@@ -224,10 +224,17 @@ int receive_data(){
     }
 
     if (p.data_l < 512) {
-        file_close(&t.filedata);
-        t.file_open = 0;
-        t.complete = 1;
-        printf("Completing receive\n");
+    	if(file_append_from_buffer(&p, &t)==-1) {
+    		strcpy(t.errmes, ESTRING_2);
+            t.errcode = ECODE_2;
+            make_err();
+    	}
+    	else { 
+	        file_close(&t.filedata);
+	        t.file_open = 0;
+	        t.complete = 1;
+	        printf("Completing receive\n");
+	    }
     }
 
     return 0;
