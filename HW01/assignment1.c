@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     socklen_t addrlen = sizeof(addr);
     getsockname(sockfd, (struct sockaddr *) &addr, &addrlen);
     myPort = ntohs(addr.sin_port);
-    printf("127.0.0.1 %u\n", myPort);
+    printf("%u\n", myPort);
 
     printf("Waiting for connections\n");
 
