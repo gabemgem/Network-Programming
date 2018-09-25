@@ -19,10 +19,11 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 	memmove(&p.op, pbuffer, sizeof(twobyte));
 	p.op = ntohs(p.op);
 	
-	
+	printf("Finished parsing op code\n");
+	printf("OP: %o\n", p.op);
 
 	if(IS_RRQ(p.op) || IS_WRQ(p.op)) {
-		int filenamel = 0;
+		/*int filenamel = 0;
 		int model = 0;
 
 		memset(p.filename, 0, sizeof(p.filename));
@@ -33,24 +34,40 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 			filenamel++;
 		}
 		(p.filename)[filenamel] = ' ';
+		*/
+		strcpy(p.filename, pbuffer+sizeof(twobyte));
+		printf("Finished getting filename into packet\n");
 
+		/*
 		while(*(pbuffer+sizeof(twobyte)+filenamel+model+1)!='0') {
 			(p.mode)[model] = pbuffer[sizeof(twobyte)+filenamel+model+1];
 			model++;
 		}
+		*/
+		strcpy(p.mode, pbuffer+sizeof(twobyte)+strlen(p.filename)+1);
+		printf("Finished getting mode into packet\n");
 	}
 
 	else if(IS_DAT(p.op)) {
+		memcpy(&p.blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
+		p.blnum = ntohs(p.blnum);
+		printf("Finished getting block num into packet\n");
+		/*
 		char c_blnum[2];
 		memcpy(c_blnum, pbuffer+sizeof(twobyte), sizeof(twobyte));
 		p.blnum = atoi(c_blnum);
-
+		*/
+		p.data_l = buff_size-(2*sizeof(twobyte));
+		memcpy(p.data, pbuffer+(2*sizeof(twobyte)), p.data_l);
+		printf("Finished getting data into packet\n");
+		/*
 		p.data_l=0;
 		memset(p.data, 0, sizeof(p.data));
 		while(p.data_l<buff_size-(2*sizeof(twobyte))) {
 			(p.data)[p.data_l] = pbuffer[(2*sizeof(twobyte))+p.data_l];
 			p.data_l++;
 		}
+		*/
 	}
 
 	else if(IS_ACK(p.op)) {
@@ -82,6 +99,7 @@ void parse_packet(const char* pbuffer, const int buff_size) {
 void packet_handler(const char* pbuffer, const int buff_size) {
 	t.packet_ready = 0;
 	parse_packet(pbuffer, buff_size);
+	printf("Finished parsing packet\n");
 
 	if(IS_RRQ(p.op)) {
 		receive_rrq();
