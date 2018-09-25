@@ -142,20 +142,20 @@ void make_data() {
 	t.packet_ready = 1;
 }
 
+void make_ack() {
+	twobyte op = htons(4);
+	twobyte block_num = htons(t.blnum);
+	make_packet(&op, sizeof(twobyte));
+	make_packet(&block_num, sizeof(twobyte));
+	t.packet_ready = 1;
+}
+
 void make_err() {
 	twobyte op = htons(5);
 	twobyte errcode = t.errcode;
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&errcode, sizeof(twobyte));
 	make_packet(&t.errmes, strlen(t.errmes));
-	t.packet_ready = 1;
-}
-
-void make_ack() {
-	twobyte op = htons(4);
-	twobyte block_num = htons(t.blnum);
-	make_packet(&op, sizeof(twobyte));
-	make_packet(&block_num, sizeof(twobyte));
 	t.packet_ready = 1;
 }
 
