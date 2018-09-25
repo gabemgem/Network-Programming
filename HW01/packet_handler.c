@@ -134,6 +134,14 @@ void packet_handler(const char* pbuffer, const int buff_size) {
 
 }
 
+void clear_out_packet() {
+	if(out_packet_length>0) {
+		free(out_packet);
+		out_packet_length=0;
+		out_packet = NULL;
+	}
+}
+
 void make_packet(void* data, int data_l) {
 	out_packet = (char*)realloc(out_packet, out_packet_length+data_l);
 	if(out_packet==NULL) {
@@ -163,20 +171,13 @@ void make_ack() {
 }
 
 void make_err() {
+	clear_out_packet();
 	twobyte op = htons(5);
 	twobyte errcode = t.errcode;
 	make_packet(&op, sizeof(twobyte));
 	make_packet(&errcode, sizeof(twobyte));
 	make_packet(&t.errmes, strlen(t.errmes));
 	t.packet_ready = 1;
-}
-
-void clear_out_packet() {
-	if(out_packet_length>0) {
-		free(out_packet);
-		out_packet_length=0;
-		out_packet = NULL;
-	}
 }
 
 int receive_rrq(){
@@ -190,8 +191,8 @@ int receive_rrq(){
     if ((file_open_read(p.filename,&t.filedata))== -1){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
-
         make_err();
+        t.complete = 1;
     }
     else{
         t.file_open = 1;
@@ -199,7 +200,6 @@ int receive_rrq(){
         t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
         t.filebufferl = file_buffer_from_pos(&t);
         make_data();
-        t.blnum++;
         
     }
 
@@ -224,6 +224,7 @@ int receive_wrq(){
         strcpy(t.errmes, ESTRING_1);
         t.errcode = ECODE_1;
         make_err();
+        t.complete = 1;
     }else{
     	t.blnum = 0;
         make_ack();
@@ -243,6 +244,7 @@ int receive_data(){
             t.errcode = ECODE_2;
             clear_out_packet();
             make_err();
+            t.complete = 1;
         }
         else{
         	clear_out_packet();
@@ -274,6 +276,7 @@ int receive_ack(){
             strcpy(t.errmes, ESTRING_2);
             t.errcode = ECODE_2;
             make_err();
+            t.complete = 1;
         }
         else{
             t.filepos = ((t.blnum * MAXDATA) - MAXDATA);
@@ -299,5 +302,6 @@ int receive_other(){
     t.errcode = ECODE_4;
     strcpy(t.errmes, ESTRING_4);
     make_err();
+    t.complete = 1;
     return 0;
 }
