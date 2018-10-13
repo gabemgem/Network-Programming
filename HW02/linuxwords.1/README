@@ -1,0 +1,35 @@
+INSTALLATION:                                      
+
+
+      linux.words can be found in /usr/share/dict/                                     
+      You can copy linux.words to that location.                                       
+
+           cp linux.words /usr/share/dict/.
+                                                                                       
+      This version of linux.words is much larger; however, it also contains            
+      single quotes and multibyte or wide characters for foreign spelling.             
+                                                                                       
+                                                                                       
+      Ways to use this file:                                                           
+                                                                                       
+      Suppose you're looking for the spelling of reprehensible. The folling            
+      will give a listing of a few words:                                              
+
+            [chirico@third-fl-71 linuxwords]$ look reprehen      
+	    reprehend                                            
+            reprehendable                                                                                                                   
+	    reprehendatory                                       
+	    reprehended                                          
+	    reprehender                                          
+	    reprehenders                                         
+            ...
+            reprehensory
+
+       There is actually 23 words found.
+
+       If for some reason you need just a standard list of words.
+       "linux.words.backup.fedora.standard" is just the standard
+       list that comes with fedora.
+
+
+	                                                         
