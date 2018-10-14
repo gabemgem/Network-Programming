@@ -77,20 +77,22 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int sockfd, listenfd, connfd, maxfd, maxi, client_set[5], i, sd, value, num_clients, size, correct, placed;
-    unsigned int myPort;
+    int listenfd, connfd, maxfd, maxi, client_set[5], i, sd, value, num_clients, size, correct, placed;
     struct sockaddr_in cliaddr, servaddr;
     char secret_word[1024], buffer[1024];
     struct namestruct names[5];
     fd_set rset, allset;
 
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(listenfd<0) {
+        perror("Error opening socket");
+        exit(1);
+    }
+
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     servaddr.sin_port = 0;
-
-    listenfd = socket(AF_INET, SOCK_STREAM, 0);
-
     if(bind(listenfd, (struct sockaddr *)&servaddr, (socklen_t)sizeof(servaddr)) == -1)
     {
         perror("Error binding");
@@ -99,9 +101,12 @@ int main(int argc, char **argv)
 
 
     struct sockaddr_in addr;
-    socklen_t addrlen = (socklen_t)sizeof(addr);
-    getsockname(sockfd, (struct sockaddr *)&addr, &addrlen);
+    unsigned int myPort;
+    bzero(&addr, sizeof(addr));
+    socklen_t addrlen = sizeof(addr);
+    getsockname(listenfd, (struct sockaddr *) &addr, &addrlen);
     myPort = ntohs(addr.sin_port);
+    printf("%u\n", myPort);
 
     if(listen(listenfd, 5) < 0)
     {
@@ -109,7 +114,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    printf("Now Listening on Port %u\n", myPort);
 
     for (i = 0; i < 5; i++)
     {
@@ -127,11 +131,12 @@ int main(int argc, char **argv)
         printf("Error setting up dict\n");
         exit(1);
     }
-    char* secret_word = (char*)malloc(sizeof(char*));
+    
     size = getWord(secret_word);
 
 
     FD_ZERO(&allset);
+    FD_SET(listenfd, &allset);
     int nready = 0;
 
     while(1)
@@ -187,7 +192,8 @@ int main(int argc, char **argv)
                     close(sd);
                     client_set[i] = -1;
                     names[i].hasname = 0;
-                    names[i] = " ";
+                    memset(names[i].n, 0, sizeof(names[i].n));
+                    //(names[i]).n = " ";
 
                 }
                 else
@@ -230,7 +236,8 @@ int main(int argc, char **argv)
                                     close(client_set[i]);
                                     client_set[i] = -1;
                                     names[i].hasname = 0;
-                                    names[i] = " ";
+                                    memset(names[i].n, 0, sizeof(names[i].n));
+                                    //(names[i]).n = " ";
                                 }
                             }
                         }
@@ -247,6 +254,5 @@ int main(int argc, char **argv)
         }
     }
     dictionary_close();
-    free(secret_word);
     return 0;
 }
