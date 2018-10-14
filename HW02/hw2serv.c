@@ -14,6 +14,12 @@
 #define MAXLINE 1024
 
 int main(int argc, char** argv) {
+
+	if(argc!=3) {
+		printf("Argument error: Please input a filename and length of longest word in dictionary.\n");
+		exit(1);
+	}
+
 	int err, listenfd, maxi, maxfd, connfd, sockfd;
 	int nready, num_clients = 0, client[FD_SETSIZE];
 	ssize_t n;
