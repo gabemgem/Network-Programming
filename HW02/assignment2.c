@@ -209,6 +209,7 @@ int main(int argc, char **argv)
                 {
                     //CLIENT DISCONNECTED
                     printf("%s has disconnected\n", names[i].n);
+                    FD_CLR(sd, &allset);
                     close(sd);
                     client_set[i] = -1;
                     names[i].hasname = -1;
@@ -279,6 +280,9 @@ int main(int argc, char **argv)
                             size = getWord(secret_word);
                             printf("New secret word: %s\n", secret_word);
                             num_clients=0;
+                            FD_ZERO(&allset);
+                            FD_SET(listenfd, &allset);
+
                         }
 
 
