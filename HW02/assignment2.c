@@ -276,7 +276,6 @@ int main(int argc, char **argv)
                             }
                             if(placed == size)
                             {
-                                read(listenfd, trash, 1024);
                                 close(client_set[i]);
                                 client_set[i] = -1;
                                 names[i].hasname = -1;
