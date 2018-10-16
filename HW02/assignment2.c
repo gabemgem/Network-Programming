@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <time.h>
+#include <ctype.h>
 #include "dictionaryhandler.h"
 
 int MAX_CLIENTS = 5;
@@ -35,14 +36,21 @@ int checkWord(const char *guess, const char *word, int size, int *correct, int *
     *correct = 0;
     *placed = 0;
 
-    char temp[1024];
+    char temp[1024], temp2[1024], temp3[1024];
     strcpy(temp, word);
+    strcpy(temp2, guess);
+    strcpy(temp3, word);
+    for(int l = 0; l<size; ++l) {
+        temp[l] = tolower(temp[l]);
+        temp3[l] = tolower(temp3[l]);
+        temp2[l] = tolower(temp2[l]);
+    }
 
     for(int i = 0; i < size; i++)
     {
         for(int j = 0; j < size; j++)
         {
-            if(guess[i] == temp[j])
+            if(temp2[i] == temp[j])
             {
                 (*correct)++;
                 temp[j] = ' ';
@@ -53,7 +61,7 @@ int checkWord(const char *guess, const char *word, int size, int *correct, int *
 
     for(int k = 0; k < size; k++)
     {
-        if(guess[k] == word[k])
+        if(temp2[k] == temp3[k])
         {
             (*placed)++;
         }
