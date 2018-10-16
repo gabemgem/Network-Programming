@@ -239,7 +239,7 @@ int main(int argc, char **argv)
                             names[i].hasname = 1;
                             strcpy(names[i].n, buffer);
                             memset(buffer, ' ', MAX_LINE);
-                            sprintf(buffer, "Welcome %s, the length of the secret word is %d\nPlease enter a guess:\n", names[i].n, size);
+                            sprintf(buffer, "Welcome %s, the length of the secret word is %d\nThere are %d players currently playing.\nPlease enter a guess:\n", names[i].n, size, num_clients);
                             printf("Everyone please welcome %s\n", names[i].n);
                         }
                         else
@@ -257,6 +257,11 @@ int main(int argc, char **argv)
                     {
                         //or process input as a guessed word
                         strcpy(guess, buffer);
+                        if(strlen(guess)!=size) {
+                            sprintf(buffer, "Sorry %s, your guess should be %d letters.\nPlease try again.\n", names[i].n, size);
+                            send(client_set[i], buffer, strlen(buffer), 0);
+                            continue;
+                        }
                         checkWord(guess, secret_word, size, &correct, &placed);
                         memset(buffer, ' ', MAX_LINE);
                         if(placed == size)
