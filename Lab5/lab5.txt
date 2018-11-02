@@ -1,0 +1,21 @@
+PART 1 ------------------------------------------------------------
+1) In order they used: LIST, STOR, LIST, LIST, RETR
+
+2) The codes that were returned: 220, 331, 230, 215, 211, 257, 200, 227, 125, 226, 220, 331, 230, 250, 257, 200, 227, 125, 226, 227, 125, 226, 250, 257, 227, 125, 226, 250, 257, 200, 227, 125, 226
+
+3) 	Username: Administrator
+	Password: napier
+
+4) 111.png
+
+5) manual.txt
+
+6) 21
+
+7) 21 Server : 49440 Host
+
+8) 1.docx and manual.txt
+
+9) 227 enters passive mode on ports 1078 and increasing by 1 each time it's called
+
+PART 2 ------------------------------------------------------------
