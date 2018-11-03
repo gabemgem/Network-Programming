@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
 	bzero(&servaddr, addrlen);
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr("localhost");//htonl(INADDR_ANY);
+	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");//htonl(INADDR_ANY);
 	servaddr.sin_port = 0;
 	if(bind(listenfd, (struct sockaddr*)&servaddr, addrlen) == -1) {
 		perror("Error binding");
@@ -67,11 +67,106 @@ int main(int argc, char* argv[]) {
     } 
 
 
-    int num_clients;
+    int num_clients=0;
     std::vector<int> waitingfd;
     std::unordered_map<std::string, int> users;
     std::unordered_map<std::string, std::vector<std::string> > channels;
     std::vector<std::string> operators;
+
+    FD_ZERO(&allset);
+    FD_SET(listenfd, &allset);
+    int nready = 0;
+    int readlen = 0;
+    char* buffer = (char*)malloc(1024*sizeof(char));
+
+    while(1) {
+
+    	rset = allset;
+    	nready = select(FD_SETSIZE, &rset, NULL, NULL, NULL);
+
+    	//If there is a new connection
+    	if(FD_ISSET(listenfd, &rset)) {
+    		if((connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &addrlen)) < 0) {
+    			perror("Error on accept");
+    			exit(EXIT_FAILURE);
+    		}
+    		printf("Connected to a new person!\n");
+    		waitingfd.push_back(connfd);
+    		num_clients++;
+    		FD_SET(connfd, &allset);
+    		nready--;
+    		if(nready<=0)
+    			continue;
+    	}
+
+    	for(int fd : waitingfd) {
+    		if(FD_ISSET(fd, &rset)) {
+    			memset(buffer, 0, 1024);
+    			readlen = read(fd, buffer, 1024);
+
+    			if(readlen==0) {
+    				/*CLIENT HAS DISCONNECTED*/
+    			}
+    			else {
+    				std::string temp;
+    				temp = strtok(buffer, " ");
+    				if(temp=="USER") {
+    					/*Valid join*/
+    				}
+    				else {
+    					/*Invalid join*/
+    				}
+    			}
+    			nready--;
+    			if(nready<=0)
+    				continue;
+    		}
+    	}
+
+    	for(std::pair<std::string, int> u : users) {
+    		if(FD_ISSET(u.second, &rset)) {
+    			memset(buffer, 0, 1024);
+    			readlen = read(u.second, buffer, 1024);
+
+    			if(readlen==0) {
+    				/*CLIENT HAS DISCONNECTED*/
+    			}
+    			else {
+    				std::string temp;
+    				temp = strtok(buffer, " ");
+
+    				if(temp=="LIST") {
+    					/*LIST COMMAND*/
+    				}
+    				else if(temp=="JOIN") {
+    					/*JOIN COMMAND*/
+    				}
+    				else if(temp=="PART") {
+    					/*PART COMMAND*/
+    				}
+    				else if(temp=="OPERATOR") {
+    					/*OPERATOR COMMAND*/
+    				}
+    				else if(temp=="KICK") {
+    					/*KICK COMMAND*/
+    				}
+    				else if(temp=="PRIVMSG") {
+    					/*PRIVMSG COMMAND*/
+    				}
+    				else if(temp=="QUIT") {
+    					/*QUIT COMMAND*/
+    				}
+    				else {
+    					/*INVALID ERROR*/
+    				}
+    			}
+
+    			nready--;
+    			if(nready<=0)
+    				continue;
+    		}
+    	}
+    }
 
 
 	return 0;
