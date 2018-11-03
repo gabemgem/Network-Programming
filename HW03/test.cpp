@@ -8,6 +8,25 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
+	string temp1 = "USERblah";
+	string temp2 = "USER blah";
+
+	for(int i=0; i<5; ++i) {
+		if(true) {
+			int space = temp1.find_first_of(' ');
+			if(space==string::npos) {
+				cout<<"No spaces found.\n";
+				continue;
+			}
+			cout<<"Found a space\n";
+			if(true) {
+				cout<<"Space found at pos: "<<space<<"\n";
+			}
+		}
+		cout<<"\n"<<i<<"\n";
+	}
+
+	/*
 	vector<int> ar = {1,2,3,4,5,6,7,8,9,10};
 	vector<int>::iterator i = ar.begin();
 	vector<int> toDelete = {1, 5, 7};

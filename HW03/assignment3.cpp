@@ -19,6 +19,75 @@
 #include <unordered_map>
 #include <cstring>
 
+void sendToChannel(	std::string message
+					, vector<int> channel
+					) {
+
+}
+
+void invalidCommand(int fd
+					) {
+	char* message = "Invalid command.";
+	send(fd, message, strlen(message), 0);
+}
+
+void quit(	int fd
+			, std::unordered_map<std::string, std::vector<int> > channels
+			, std::unordered_map<int, std::string> users
+			, std::vector<int> operators
+			) {
+
+}
+
+void list(	int fd
+			, std::string comm
+			, std::unordered_map<std::string, std::vector<int> > channels
+			, std::unordered_map<int, std::string> users
+			) {
+
+}
+
+void join(int fd
+			, std::string comm
+			, std::unordered_map<std::string, std::vector<int> > channels
+			, std::unordered_map<int, std::string> users
+			) {
+
+}
+
+void part(int fd
+			, std::string comm
+			, std::unordered_map<std::string, std::vector<int> > channels
+			, std::unordered_map<int, std::string> users
+			) {
+
+}
+
+void op(int fd
+		, std::string pass
+		, std::vector<int> operators
+		) {
+
+}
+
+void kick(	int fd
+			, std::string comm
+			, std::unordered_map<std::string, std::vector<int> > channels
+			, std::unordered_map<int, std::string> users
+			, std::vector<int> operators
+			) {
+
+}
+
+void privmsg(	int fd
+				, std::string comm
+				, std::unordered_map<std::string, std::vector<int> > channels
+				, std::unordered_map<int, std::string> users
+				) {
+
+}
+
+
 
 int main(int argc, char* argv[]) {
 
@@ -120,9 +189,14 @@ int main(int argc, char* argv[]) {
     				std::string temp(buffer, readlen);
     				int space = temp.find_first_of(' ');
     				std::string comm = temp.substr(0, space);
-    				if(temp=="USER") {/*VALID COMMAND*/
+    				if(space==string::npos) {/*NO SPACES FOUND*/
+    					invalidCommand(fd);
+    					FD_CLR(fd, &allset);
+    					close(fd);
+    				}
+    				else if(comm=="USER") {/*VALID COMMAND*/
     					std::string name = temp.substr(space+1);
-    					addUser(name, );/****************************************************/
+    					addUser(fd, name, );/****************************************************/
     					
     				}
     				else {/*INVALID COMMAND*/
@@ -158,36 +232,38 @@ int main(int argc, char* argv[]) {
     			readlen = read(fd, buffer, 1024);
 
     			if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
-    				
+    				quit(fd, channels, users, operators);/**************************************************************/
     			}
     			else {
     				std::string buff(buffer, readlen);
     				int space = buff.find_first_of(' ');
     				std::string temp = buff.substr(0, space);
-
-    				if(temp=="LIST") {/*LIST COMMAND*/
-    					
+    				if(space==string::npos) {
+    					invalidCommand(fd);
+    				}
+    				else if(temp=="LIST") {/*LIST COMMAND*/
+    					list(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="JOIN") {/*JOIN COMMAND*/
-    					
+    					join(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="PART") {/*PART COMMAND*/
-    					
+    					part(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
-    					
+    					op(fd, buff.substr(space+1), operators);/***************************************/
     				}
     				else if(temp=="KICK") {/*KICK COMMAND*/
-    					
+    					kick(fd, buff.substr(space+1), channels, users, operators);/*************************************/
     				}
     				else if(temp=="PRIVMSG") {/*PRIVMSG COMMAND*/
-    					
+    					privmsg(fd, buff.substr(space+1), channels, users);/**********************************/
     				}
     				else if(temp=="QUIT") {/*QUIT COMMAND*/
-    					
+    					quit(fd, );/***********************************************************/
     				}
     				else {/*INVALID ERROR*/
-    					
+    					invalidCommand(fd);
     				}
     			}
 
