@@ -152,16 +152,18 @@ int main(int argc, char* argv[]) {
 	    }
 
     	for(std::pair<int, std::string> u : users) {
-    		if(FD_ISSET(u.first, &rset)) {
+    		int fd = u.first;
+    		if(FD_ISSET(fd, &rset)) {
     			memset(buffer, 0, 1024);
-    			readlen = read(u.first, buffer, 1024);
+    			readlen = read(fd, buffer, 1024);
 
     			if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
     				
     			}
     			else {
-    				std::string temp;
-    				temp = strtok(buffer, " ");
+    				std::string buff(buffer, readlen);
+    				int space = buff.find_first_of(' ');
+    				std::string temp = buff.substr(0, space);
 
     				if(temp=="LIST") {/*LIST COMMAND*/
     					
