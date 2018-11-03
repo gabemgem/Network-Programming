@@ -112,66 +112,80 @@ int main(int argc, char* argv[]) {
     			memset(buffer, 0, 1024);
     			readlen = read(fd, buffer, 1024);
 
-    			if(readlen==0) {
-    				toDelete.push_back(loc);
+    			if(readlen==0) {/*USER HAS DISCONNECTED*/
+    				FD_CLR(fd, &allset);
+    				close(fd);
     			}
-    			else {
+    			else {/*PROCESS COMMAND*/
     				std::string temp(buffer, readlen);
     				int space = temp.find_first_of(' ');
     				std::string comm = temp.substr(0, space);
-    				if(temp=="USER") {
+    				if(temp=="USER") {/*VALID COMMAND*/
     					std::string name = temp.substr(space+1);
-    					addUser(name, )
+    					addUser(name, );/****************************************************/
+    					
     				}
-    				else {
+    				else {/*INVALID COMMAND*/
     					memset(buffer, 0, 1024);
     					strcpy(buffer, "Invalid command, please identify yourself with USER.");
     					send(fd, buffer, strlen(buffer), 0);
-    					toDelete.push_back(loc);
+    					FD_CLR(fd, &allset);
+    					close(fd);
     				}
     			}
     			nready--;
     			if(nready<=0)
     				continue;
+    			toDelete.push_back(loc);/*SET FD TO BE DELETED FROM WAITINGFD VECTOR*/
     			loc++;
     		}
     	}
 
-    	for(std::pair<std::string, int> u : users) {
-    		if(FD_ISSET(u.second, &rset)) {
-    			memset(buffer, 0, 1024);
-    			readlen = read(u.second, buffer, 1024);
+    	if(toDelete.size()>0) {/*DELETE FD FROM WAITINGFD VECTOR*/
+	    	i = waitingfd.begin();
+	    	advance(i, toDelete[0]);
+	    	i = waitingfd.erase(i);
+	    	for(int j = 1; j<toDelete.size(); ++j) {
+	    		advance(i, toDelete[j]-toDelete[j-1]-1);
+	    		i = waitingfd.erase(i);
+	    	}
+	    }
 
-    			if(readlen==0) {
-    				/*CLIENT HAS DISCONNECTED*/
+    	for(std::pair<int, std::string> u : users) {
+    		if(FD_ISSET(u.first, &rset)) {
+    			memset(buffer, 0, 1024);
+    			readlen = read(u.first, buffer, 1024);
+
+    			if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
+    				
     			}
     			else {
     				std::string temp;
     				temp = strtok(buffer, " ");
 
-    				if(temp=="LIST") {
-    					/*LIST COMMAND*/
+    				if(temp=="LIST") {/*LIST COMMAND*/
+    					
     				}
-    				else if(temp=="JOIN") {
-    					/*JOIN COMMAND*/
+    				else if(temp=="JOIN") {/*JOIN COMMAND*/
+    					
     				}
-    				else if(temp=="PART") {
-    					/*PART COMMAND*/
+    				else if(temp=="PART") {/*PART COMMAND*/
+    					
     				}
-    				else if(temp=="OPERATOR") {
-    					/*OPERATOR COMMAND*/
+    				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
+    					
     				}
-    				else if(temp=="KICK") {
-    					/*KICK COMMAND*/
+    				else if(temp=="KICK") {/*KICK COMMAND*/
+    					
     				}
-    				else if(temp=="PRIVMSG") {
-    					/*PRIVMSG COMMAND*/
+    				else if(temp=="PRIVMSG") {/*PRIVMSG COMMAND*/
+    					
     				}
-    				else if(temp=="QUIT") {
-    					/*QUIT COMMAND*/
+    				else if(temp=="QUIT") {/*QUIT COMMAND*/
+    					
     				}
-    				else {
-    					/*INVALID ERROR*/
+    				else {/*INVALID ERROR*/
+    					
     				}
     			}
 

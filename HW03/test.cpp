@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
 	advance(i, toDelete[0]);
 	cout<<"Pos after "<<toDelete[0]<<": "<<*i<<"\n";
 	i = ar.erase(i);
-	advance(i, toDelete[1]-toDelete[0]);
+	advance(i, toDelete[1]-toDelete[0]-1);
 	cout<<"Pos after "<<toDelete[1]<<": "<<*i<<"\n";
 	i = ar.erase(i);
-	advance(i, toDelete[2]-toDelete[1]);
+	advance(i, toDelete[2]-toDelete[1]-1);
 	cout<<"Pos after "<<toDelete[2]<<": "<<*i<<"\n";
 	i = ar.erase(i);
 
