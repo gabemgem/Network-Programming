@@ -33,6 +33,10 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if(haspass) {
+		printf("%s\n", pass);
+	}
+
 
 	int listenfd, connfd;
 	struct sockaddr_in cliaddr, servaddr;
@@ -69,9 +73,9 @@ int main(int argc, char* argv[]) {
 
     int num_clients=0;
     std::vector<int> waitingfd;
-    std::unordered_map<std::string, int> users;
-    std::unordered_map<std::string, std::vector<std::string> > channels;
-    std::vector<std::string> operators;
+    std::unordered_map<int, std::string> users;
+    std::unordered_map<std::string, std::vector<int> > channels;
+    std::vector<int> operators;
 
     FD_ZERO(&allset);
     FD_SET(listenfd, &allset);
@@ -99,27 +103,37 @@ int main(int argc, char* argv[]) {
     			continue;
     	}
 
-    	for(int fd : waitingfd) {
+    	vector<int>::iterator i;
+    	vector<int> toDelete;
+    	int loc = 0;
+    	for(i = waitingfd.begin(); i<waitingfd.end(); i++) {
+    		int fd = *i;
     		if(FD_ISSET(fd, &rset)) {
     			memset(buffer, 0, 1024);
     			readlen = read(fd, buffer, 1024);
 
     			if(readlen==0) {
-    				/*CLIENT HAS DISCONNECTED*/
+    				toDelete.push_back(loc);
     			}
     			else {
-    				std::string temp;
-    				temp = strtok(buffer, " ");
+    				std::string temp(buffer, readlen);
+    				int space = temp.find_first_of(' ');
+    				std::string comm = temp.substr(0, space);
     				if(temp=="USER") {
-    					/*Valid join*/
+    					std::string name = temp.substr(space+1);
+    					addUser(name, )
     				}
     				else {
-    					/*Invalid join*/
+    					memset(buffer, 0, 1024);
+    					strcpy(buffer, "Invalid command, please identify yourself with USER.");
+    					send(fd, buffer, strlen(buffer), 0);
+    					toDelete.push_back(loc);
     				}
     			}
     			nready--;
     			if(nready<=0)
     				continue;
+    			loc++;
     		}
     	}
 
