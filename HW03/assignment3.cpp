@@ -71,7 +71,7 @@ void list(	int fd
 	std::unordered_map<int, std::string>::iterator itr;
 	std::vector<int> userlist = channels[comm];
 	std::string message = "Users in channel "+com+"\n";
-	send(fd, message.c_str(), message.size(), 0);
+	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 	for (unsigned int i = 0; i < userlist.size(); i++) {
 		send(fd, userlist[i].c_str(), userlist[i].size(), 0);
@@ -110,17 +110,24 @@ void part(int fd
 		std::vector<int> v = itr->second;		
 		std::vector<int>::iterator itr;
 		for (itr = v.begin(); itr != v.end(); itr++) {
-			
+			if (itr->first == fd) {
+				v.erase(itr);
+				return;
+			}
 		}
+
+		char* message = "You are not a part of this channel\n";
+		send(fd, message, strlen(message), 0);
+
 
 	}
 
 	else {
 		//Print channel does not exist
-
+		char* message = "That Channel does not exist";
+		send(fd, message, strlen(message), 0);
 	}
-	
-	
+	return;
 }
 
 void op(int fd
@@ -135,8 +142,45 @@ void kick(	int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
-			) {}
+			) {
+	int space = comm.find_first_of(' ');
+    std::string channel = temp.substr(0, space);
+	std::string name = temp.substr(space+1);
+	int namefd;
+	std::string message;
+	if (users.find(name) != users.end()) {
+		namefd = users[name];
+	}
+	else {
+		message = "This user does not exist";
+		send(fd, message, strlen(message.c_str()), 0);
+		return;
+	}
 
+
+	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(channel);
+	if (itr != channels.end()) {
+		std::vector<int>::iterator itr2;
+		for (itr2 = (itr->second).begin(); itr2 != (itr->second).end(); itr++) {
+			if (*itr2 == ) {
+				std::string message = "An operator has kicked you from "+channel;
+				send(*itr2, message, strlen(message.c_str()), 0);
+				(itr->second).erase(itr2);
+				message = name+" was successfully removed from "+channel;
+				send(fd, message, strlen(message.c_str()), 0);
+				return;
+			}
+		}
+		message = name+" is not in channel "+channel+"!\n";
+		send(fd, message, strlen(message.c_str()), 0);
+	}
+
+	else {
+		message = channel+" does not exist!";
+		send(fd, message, strlen(message.c_str()), 0);
+	}
+		
+	
 }
 
 void privmsg(	int fd
@@ -145,6 +189,23 @@ void privmsg(	int fd
 				, std::unordered_map<int, std::string> users
 				) {
 
+	int space = comm.find_first_of(' ');
+    std::string receiver = temp.substr(0, space);
+	std::string message = temp.substr(space+1);
+	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(receiver);
+	if (itr != channels.end()) {
+		sendToChannel(msg, channels);
+		return;
+	}
+	itr = users.find(receiver);
+	if (itr != users.end()) {
+		send(itr->second, message, strlen(message.c_str()), 0);
+		return;
+	}
+	
+	message = "No user or channel of that name";
+	send(itr->second, message, strlen(message.c_str()), 0);
+	return;
 }
 
 
