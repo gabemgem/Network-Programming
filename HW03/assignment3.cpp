@@ -18,10 +18,32 @@
 #include <string>
 #include <unordered_map>
 #include <cstring>
+#include <utility>
 
+char buffer[512];
+
+void addUser(	int fd
+				, std::string name
+				,std::unordered_map<int, std::string> &users
+				) {
+
+	//ADD CHECKNAME
+
+
+	std::pair<int, std::string> userPair(int, name);
+	users.insert(userPair);
+	sprintf(buffer, "Welcome, %s", name.c_str());
+	send(fd, buffer, strlen(buffer), 0);
+
+
+	
+	
+
+}
 void sendToChannel(	std::string message
 					, vector<int> channel
 					) {
+	
 
 }
 
@@ -29,6 +51,7 @@ void invalidCommand(int fd
 					) {
 	char* message = "Invalid command.";
 	send(fd, message, strlen(message), 0);
+
 }
 
 void quit(	int fd
@@ -44,6 +67,17 @@ void list(	int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
+	
+	std::unordered_map<int, std::string>::iterator itr;
+	std::vector<int> userlist = channels[comm];
+	std::string message = "Users in channel "+com+"\n";
+	send(fd, message.c_str(), message.size(), 0);
+
+	for (unsigned int i = 0; i < userlist.size(); i++) {
+		send(fd, userlist[i].c_str(), userlist[i].size(), 0);
+	}
+
+
 
 }
 
@@ -52,7 +86,17 @@ void join(int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
-
+	if (channels.find(comm) != channels.end())
+	{
+		std::vector<int> v;
+		v.push_back(fd);
+		std::pair<std::string, std::vector<int> > channelPair(comm, v);
+		channels.insert(channelPair);
+	}
+	else {
+		channels[comm].push(fd);
+	}
+	
 }
 
 void part(int fd
@@ -60,7 +104,23 @@ void part(int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
+	std::unordered_map<int, std::string>::iterator itr = channels.find(comm);
+	if (itr != channels.end()) {
+		//Channel Exists
+		std::vector<int> v = itr->second;		
+		std::vector<int>::iterator itr;
+		for (itr = v.begin(); itr != v.end(); itr++) {
+			
+		}
 
+	}
+
+	else {
+		//Print channel does not exist
+
+	}
+	
+	
 }
 
 void op(int fd
@@ -75,7 +135,7 @@ void kick(	int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
-			) {
+			) {}
 
 }
 
@@ -122,6 +182,7 @@ int main(int argc, char* argv[]) {
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");//htonl(INADDR_ANY);
 	servaddr.sin_port = 0;
+	
 	if(bind(listenfd, (struct sockaddr*)&servaddr, addrlen) == -1) {
 		perror("Error binding");
 		exit(1);
