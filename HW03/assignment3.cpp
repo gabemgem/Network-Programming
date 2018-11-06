@@ -27,7 +27,7 @@ void addUser(	int fd
 				,std::unordered_map<int, std::string> &users
 				) {
 
-    if(name.find_first_of('#')!=stind::npos) {	//ADD CHECKNAME
+    if(name.find_first_of('#')!=std::string::npos) {	//ADD CHECKNAME
         return;
     }
 	std::pair<int, std::string> userPair(fd, name);
@@ -64,16 +64,16 @@ void quit(	int fd
             if(*chit==fd)
                 chit = channel_it->second.erase(chit);
             else
-                advance(chit, 1);
+                chit++;
         }
     }
 
     std::unordered_map<int, std::string>::iterator users_it = users.begin();
     while(users_it!=users.end()) {
         if(users_it->first==fd)
-            chit = users.erase(chit);
+            users_it = users.erase(users_it);
         else
-            advance(chit, 1);
+            users_it++;
     }
 
     std::vector<int>::iterator op_it = operators.begin();
@@ -81,7 +81,7 @@ void quit(	int fd
         if(*op_it==fd)
             op_it = operators.erase(op_it);
         else
-            advance(op_it, 1);
+            op_it++;
     }
 
 }
@@ -92,9 +92,9 @@ void list(	int fd
 			, std::unordered_map<int, std::string> users
 			) {
 
-    std::unordered_map<int, std::string>::iterator itr;
+    std::unordered_map<std::string, std::vector<int> >::iterator itr;
 	if(comm.size()==0 || comm[0]!='#') {
-        std::string message = "There are currently "+channels.size()+" channels.";
+        std::string message = "There are currently "+std::to_string(channels.size())+" channels.";
         send(fd, message.c_str(), strlen(message.c_str()), 0);
         for(itr = channels.begin(); itr!=channels.end(); itr++) {
             message = "* " +itr->first.substr(1);
@@ -105,7 +105,7 @@ void list(	int fd
 
 	itr = channels.find(comm);
     if(itr == channels.end()) {
-        std::string message = "There are currently "+channels.size()+" channels.";
+        std::string message = "There are currently "+std::to_string(channels.size())+" channels.";
         send(fd, message.c_str(), strlen(message.c_str()), 0);
         for(itr = channels.begin(); itr!=channels.end(); itr++) {
             message = "* " +itr->first.substr(1);
@@ -116,7 +116,7 @@ void list(	int fd
 
 	std::vector<int> userlist = itr->second;
 	
-    std::string message = "There are currently "+userlist.size()+" members.\n"+comm+" members: ";
+    std::string message = "There are currently "+std::to_string(userlist.size())+" members.\n"+comm+" members: ";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 	std::unordered_map<int, std::string>::iterator itr2;
@@ -164,8 +164,8 @@ bool removeFromChannel(int fd
                         ) {
     std::unordered_map<std::string, std::vector<int> >::iterator it = channels.find(ch);
 
-    if(it = channels.end())
-        return;
+    if(it == channels.end())
+        return false;
 
     std::string name = users[fd];
     std::vector<int>::iterator it2 = it->second.begin();
@@ -189,7 +189,7 @@ void part(int fd
 
     if(comm.size()==0) {
         for(std::pair<std::string, std::vector<int> > ch : channels) {
-            removeFromChannel(fd, ch->first, channels, users);
+            removeFromChannel(fd, ch.first, channels, users);
         }
     }
 
@@ -418,7 +418,7 @@ int main(int argc, char* argv[]) {
     			}
     			else {/*PROCESS COMMAND*/
     				std::string temp(buffer, readlen);
-    				int space = temp.find_first_of(' ');
+    				unsigned int space = temp.find_first_of(' ');
     				std::string comm = temp.substr(0, space);
     				if(space==std::string::npos) {/*NO SPACES FOUND*/
     					invalidCommand(fd);
@@ -450,7 +450,7 @@ int main(int argc, char* argv[]) {
 	    	i = waitingfd.begin();
 	    	std::advance(i, toDelete[0]);
 	    	i = waitingfd.erase(i);
-	    	for(int j = 1; j<toDelete.size(); ++j) {
+	    	for(unsigned int j = 1; j<toDelete.size(); ++j) {
 	    		std::advance(i, toDelete[j]-toDelete[j-1]-1);
 	    		i = waitingfd.erase(i);
 	    	}
@@ -467,7 +467,7 @@ int main(int argc, char* argv[]) {
     			}
     			else {
     				std::string buff(buffer, readlen);
-    				int space = buff.find_first_of(' ');
+    				unsigned int space = buff.find_first_of(' ');
     				std::string temp = buff.substr(0, space);
     				if(space==std::string::npos) {
     					invalidCommand(fd);
@@ -478,7 +478,7 @@ int main(int argc, char* argv[]) {
     				else if(temp=="JOIN") {/*JOIN COMMAND*/
     					join(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
-    				else if(temp=="PART") {/*PART COMMAND*
+    				else if(temp=="PART") {/*PART COMMAND*/
     					part(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
