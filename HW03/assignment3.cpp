@@ -30,6 +30,7 @@ void addUser(	int fd
 	//ADD CHECKNAME
 
 
+
 	std::pair<int, std::string> userPair(fd, name);
 	users.insert(userPair);
 	sprintf(buffer, "Welcome, %s", name.c_str());
@@ -71,8 +72,18 @@ void list(	int fd
 	std::string message = "Users in channel "+comm+":\n";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
+	std::unordered_map<int, std::string>::iterator itr2;
+	std::string name;
 	for (unsigned int i = 0; i < userlist.size(); i++) {
-		std::string name = userlist[i];
+		int namefd = userlist[i];
+		itr2 = users.find(namefd);
+		if (itr2 != users.end()) {
+			name = itr2->second;
+		}
+		else {
+			perror("List User Not Found");
+			return;
+		}
 		send(fd, name.c_str(), strlen(name.c_str()), 0);
 	}
 
@@ -163,15 +174,16 @@ void kick(	int fd
 	}
 
 
-	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(channel);
-	
-	if (itr != channels.end()) {
+	std::unordered_map<std::string, std::vector<int> >::iterator channel_itr = channels.find(channel);
+
+	if (channel_itr != channels.end()) {
+		std::vector<int> v = channel_itr->second;
 		std::vector<int>::iterator itr2;
-		for (itr2 = (itr->second).begin(); itr2 != (itr->second).end(); itr++) {
+		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
 			if (namefd == *itr2) {
 				std::string message = "An operator has kicked you from "+channel;
 				send(*itr2, message.c_str(), strlen(message.c_str()), 0);
-				(itr->second).erase(itr2);
+				v.erase(itr2);
 				message = name+" was successfully removed from "+channel;
 				send(fd, message.c_str(), strlen(message.c_str()), 0);
 				return;
