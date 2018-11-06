@@ -30,27 +30,26 @@ void addUser(	int fd
 	//ADD CHECKNAME
 
 
-	std::pair<int, std::string> userPair(int, name);
+
+	std::pair<int, std::string> userPair(fd, name);
 	users.insert(userPair);
 	sprintf(buffer, "Welcome, %s", name.c_str());
 	send(fd, buffer, strlen(buffer), 0);
-
-
-	
-	
-
 }
+
 void sendToChannel(	std::string message
-					, vector<int> channel
+					, std::vector<int> channel
 					) {
-	
+	for (unsigned int i = 0; i < channel.size(); i++) {
+		send(channel[i], message.c_str(), strlen(message.c_str()), 0);
+	}
 
 }
 
 void invalidCommand(int fd
 					) {
-	char* message = "Invalid command.";
-	send(fd, message, strlen(message), 0);
+	std::string message = "Invalid command.";
+	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 }
 
@@ -69,12 +68,23 @@ void list(	int fd
 			) {
 	
 	std::unordered_map<int, std::string>::iterator itr;
-	std::vector<int> userlist = channels[comm];
-	std::string message = "Users in channel "+com+"\n";
-	send(fd, message.c_str(), message.size(), 0);
+	std::vector<int> userlist = (std::vector<int>)(channels.find(comm))->second;
+	std::string message = "Users in channel "+comm+":\n";
+	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
+	std::unordered_map<int, std::string>::iterator itr2;
+	std::string name;
 	for (unsigned int i = 0; i < userlist.size(); i++) {
-		send(fd, userlist[i].c_str(), userlist[i].size(), 0);
+		int namefd = userlist[i];
+		itr2 = users.find(namefd);
+		if (itr2 != users.end()) {
+			name = itr2->second;
+		}
+		else {
+			perror("List User Not Found");
+			return;
+		}
+		send(fd, name.c_str(), strlen(name.c_str()), 0);
 	}
 
 
@@ -94,7 +104,7 @@ void join(int fd
 		channels.insert(channelPair);
 	}
 	else {
-		channels[comm].push(fd);
+		channels[comm].push_back(fd);
 	}
 	
 }
@@ -104,23 +114,29 @@ void part(int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
-	std::unordered_map<int, std::string>::iterator itr = channels.find(comm);
+	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(comm);
 	if (itr != channels.end()) {
 		//Channel Exists
 		std::vector<int> v = itr->second;		
-		std::vector<int>::iterator itr;
-		for (itr = v.begin(); itr != v.end(); itr++) {
-			
+		std::vector<int>::iterator itr2;
+		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
+			if (*itr2 == fd) {
+				v.erase(itr2);
+				return;
+			}
 		}
+
+		std::string message = "You are not a part of this channel\n";
+		send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 	}
 
 	else {
 		//Print channel does not exist
-
+		std::string message = "That Channel does not exist";
+		send(fd, message.c_str(), strlen(message.c_str()), 0);
 	}
-	
-	
+	return;
 }
 
 void op(int fd
@@ -136,7 +152,56 @@ void kick(	int fd
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
 			) {
+<<<<<<< HEAD
+=======
+				
+	int space = comm.find_first_of(' ');
+    std::string channel = comm.substr(0, space);
+	std::string name = comm.substr(space+1);
+	int namefd;
+	std::string message;
+	
+	std::unordered_map<int, std::string>::iterator itr;
+	for (itr = users.begin(); itr != users.end(); itr++) {
+		if (itr->second == name) {
+			namefd = itr->first;
+			break;
+		}
+	}
 
+	if (itr == users.end()) {
+		message = "This user does not exist";
+		send(fd, message.c_str(), strlen(message.c_str()), 0);
+		return;
+	}
+
+>>>>>>> aa5aa56e9ecf01e2f07dc3d35cb558d663c5270d
+
+	std::unordered_map<std::string, std::vector<int> >::iterator channel_itr = channels.find(channel);
+
+	if (channel_itr != channels.end()) {
+		std::vector<int> v = channel_itr->second;
+		std::vector<int>::iterator itr2;
+		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
+			if (namefd == *itr2) {
+				std::string message = "An operator has kicked you from "+channel;
+				send(*itr2, message.c_str(), strlen(message.c_str()), 0);
+				v.erase(itr2);
+				message = name+" was successfully removed from "+channel;
+				send(fd, message.c_str(), strlen(message.c_str()), 0);
+				return;
+			}
+		}
+		message = name+" is not in channel "+channel+"!\n";
+		send(fd, message.c_str(), strlen(message.c_str()), 0);
+	}
+
+	else {
+		message = channel+" does not exist!";
+		send(fd, message.c_str(), strlen(message.c_str()), 0);
+	}
+		
+	
 }
 
 void privmsg(	int fd
@@ -145,6 +210,26 @@ void privmsg(	int fd
 				, std::unordered_map<int, std::string> users
 				) {
 
+	int space = comm.find_first_of(' ');
+    std::string receiver = comm.substr(0, space);
+	std::string message = comm.substr(space+1);
+	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(receiver);
+	if (itr != channels.end()) {
+		sendToChannel(message, itr->second);
+		return;
+	}
+
+	std::unordered_map<int, std::string>::iterator itr2;
+	for (itr2 = users.begin(); itr2 != users.end(); itr2++) {
+		if (itr2->second == receiver) {
+			send(itr2->first, message.c_str(), strlen(message.c_str()), 0);
+			return;
+		}
+	}
+	
+	message = "No user or channel of that name";
+	send(fd, message.c_str(), strlen(message.c_str()), 0);
+	return;
 }
 
 
@@ -163,7 +248,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(haspass) {
-		printf("%s\n", pass);
+		printf("%s\n", pass.c_str());
 	}
 
 
@@ -233,8 +318,8 @@ int main(int argc, char* argv[]) {
     			continue;
     	}
 
-    	vector<int>::iterator i;
-    	vector<int> toDelete;
+    	std::vector<int>::iterator i;
+    	std::vector<int> toDelete;
     	int loc = 0;
     	for(i = waitingfd.begin(); i<waitingfd.end(); i++) {
     		int fd = *i;
@@ -250,14 +335,14 @@ int main(int argc, char* argv[]) {
     				std::string temp(buffer, readlen);
     				int space = temp.find_first_of(' ');
     				std::string comm = temp.substr(0, space);
-    				if(space==string::npos) {/*NO SPACES FOUND*/
+    				if(space==std::string::npos) {/*NO SPACES FOUND*/
     					invalidCommand(fd);
     					FD_CLR(fd, &allset);
     					close(fd);
     				}
     				else if(comm=="USER") {/*VALID COMMAND*/
     					std::string name = temp.substr(space+1);
-    					addUser(fd, name, );/****************************************************/
+    					addUser(fd, name, users);/****************************************************/
     					
     				}
     				else {/*INVALID COMMAND*/
@@ -278,13 +363,13 @@ int main(int argc, char* argv[]) {
 
     	if(toDelete.size()>0) {/*DELETE FD FROM WAITINGFD VECTOR*/
 	    	i = waitingfd.begin();
-	    	advance(i, toDelete[0]);
+	    	std::advance(i, toDelete[0]);
 	    	i = waitingfd.erase(i);
 	    	for(int j = 1; j<toDelete.size(); ++j) {
-	    		advance(i, toDelete[j]-toDelete[j-1]-1);
+	    		std::advance(i, toDelete[j]-toDelete[j-1]-1);
 	    		i = waitingfd.erase(i);
 	    	}
-	    }
+	    } 
 
     	for(std::pair<int, std::string> u : users) {
     		int fd = u.first;
@@ -299,7 +384,7 @@ int main(int argc, char* argv[]) {
     				std::string buff(buffer, readlen);
     				int space = buff.find_first_of(' ');
     				std::string temp = buff.substr(0, space);
-    				if(space==string::npos) {
+    				if(space==std::string::npos) {
     					invalidCommand(fd);
     				}
     				else if(temp=="LIST") {/*LIST COMMAND*/
@@ -308,7 +393,7 @@ int main(int argc, char* argv[]) {
     				else if(temp=="JOIN") {/*JOIN COMMAND*/
     					join(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
-    				else if(temp=="PART") {/*PART COMMAND*/
+    				else if(temp=="PART") {/*PART COMMAND*
     					part(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
@@ -321,7 +406,7 @@ int main(int argc, char* argv[]) {
     					privmsg(fd, buff.substr(space+1), channels, users);/**********************************/
     				}
     				else if(temp=="QUIT") {/*QUIT COMMAND*/
-    					quit(fd, );/***********************************************************/
+    					quit(fd, channels, users, operators);/***********************************************************/
     				}
     				else {/*INVALID ERROR*/
     					invalidCommand(fd);
