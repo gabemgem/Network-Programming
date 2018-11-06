@@ -206,7 +206,19 @@ void part(int fd
 void op(int fd
 		, std::string pass
 		, std::vector<int> operators
+        , std::string actual_pass
+        , bool haspass
 		) {
+    if(haspass) {
+        if(pass!=actual_pass) {
+            std::string message = "Invalid OPERATOR command.";
+            send(fd, message.c_str(), strlen(message.c_str()), 0);
+            return;
+        }
+    }
+    operators.push_back(fd);
+    std::string message = "OPERATOR status bestowed.";
+    send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 }
 
@@ -470,7 +482,7 @@ int main(int argc, char* argv[]) {
     					part(fd, buff.substr(space+1), channels, users);/*************************************/
     				}
     				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
-    					op(fd, buff.substr(space+1), operators);/***************************************/
+    					op(fd, buff.substr(space+1), operators, pass, haspass);/***************************************/
     				}
     				else if(temp=="KICK") {/*KICK COMMAND*/
     					kick(fd, buff.substr(space+1), channels, users, operators);/*************************************/
