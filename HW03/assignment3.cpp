@@ -32,7 +32,7 @@ void addUser(	int fd
     }
 	std::pair<int, std::string> userPair(fd, name);
 	users.insert(userPair);
-	sprintf(buffer, "Welcome, %s", name.c_str());
+	sprintf(buffer, "Welcome, %s\n", name.c_str());
 	send(fd, buffer, strlen(buffer), 0);
 }
 
@@ -47,7 +47,7 @@ void sendToChannel(	std::string message
 
 void invalidCommand(int fd
 					) {
-	std::string message = "Invalid command.";
+	std::string message = "Invalid command.\n";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 }
@@ -94,10 +94,10 @@ void list(	int fd
 
     std::unordered_map<std::string, std::vector<int> >::iterator itr;
 	if(comm.size()==0 || comm[0]!='#') {
-        std::string message = "There are currently "+std::to_string(channels.size())+" channels.";
+        std::string message = "There are currently "+std::to_string(channels.size())+" channels.\n";
         send(fd, message.c_str(), strlen(message.c_str()), 0);
         for(itr = channels.begin(); itr!=channels.end(); itr++) {
-            message = "* " +itr->first.substr(1);
+            message = "* " +itr->first.substr(1)+"\n";
             send(fd, message.c_str(), strlen(message.c_str()), 0);
         }
         return;
@@ -105,10 +105,10 @@ void list(	int fd
 
 	itr = channels.find(comm);
     if(itr == channels.end()) {
-        std::string message = "There are currently "+std::to_string(channels.size())+" channels.";
+        std::string message = "There are currently "+std::to_string(channels.size())+" channels.\n";
         send(fd, message.c_str(), strlen(message.c_str()), 0);
         for(itr = channels.begin(); itr!=channels.end(); itr++) {
-            message = "* " +itr->first.substr(1);
+            message = "* " +itr->first.substr(1)+"\n";
             send(fd, message.c_str(), strlen(message.c_str()), 0);
         }
         return;
@@ -197,7 +197,7 @@ void part(int fd
 	if (itr != channels.end()) {
         if(!removeFromChannel(fd, itr->first, channels, users)) {
             //Print channel does not exist
-            std::string message = "You are not currently in "+comm+".";
+            std::string message = "You are not currently in "+comm+".\n";
             send(fd, message.c_str(), strlen(message.c_str()), 0);
         }
 	}
@@ -211,13 +211,13 @@ void op(int fd
 		) {
     if(haspass) {
         if(pass!=actual_pass) {
-            std::string message = "Invalid OPERATOR command.";
+            std::string message = "Invalid OPERATOR command.\n";
             send(fd, message.c_str(), strlen(message.c_str()), 0);
             return;
         }
     }
     operators.push_back(fd);
-    std::string message = "OPERATOR status bestowed.";
+    std::string message = "OPERATOR status bestowed.\n";
     send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 }
@@ -257,7 +257,7 @@ void kick(	int fd
 	}
 
 	if (itr == users.end()) {
-		message = "This user does not exist";
+		message = "This user does not exist.\n";
 		send(fd, message.c_str(), strlen(message.c_str()), 0);
 		return;
 	}
@@ -269,10 +269,10 @@ void kick(	int fd
 		std::vector<int>::iterator itr2;
 		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
 			if (namefd == *itr2) {
-				std::string message = "An operator has kicked you from "+channel;
+				std::string message = "An operator has kicked you from "+channel+".\n";
 				send(*itr2, message.c_str(), strlen(message.c_str()), 0);
 				v.erase(itr2);
-				message = name+" was successfully removed from "+channel;
+				message = name+" was successfully removed from "+channel+".\n";
 				send(fd, message.c_str(), strlen(message.c_str()), 0);
 				return;
 			}
@@ -282,7 +282,7 @@ void kick(	int fd
 	}
 
 	else {
-		message = channel+" does not exist!";
+		message = channel+" does not exist!\n";
 		send(fd, message.c_str(), strlen(message.c_str()), 0);
 	}
 		
@@ -312,7 +312,7 @@ void privmsg(	int fd
 		}
 	}
 	
-	message = "No user or channel of that name";
+	message = "No user or channel of that name.\n";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 	return;
 }
@@ -432,7 +432,7 @@ int main(int argc, char* argv[]) {
     				}
     				else {/*INVALID COMMAND*/
     					memset(buffer, 0, 1024);
-    					strcpy(buffer, "Invalid command, please identify yourself with USER.");
+    					strcpy(buffer, "Invalid command, please identify yourself with USER.\n");
     					send(fd, buffer, strlen(buffer), 0);
     					FD_CLR(fd, &allset);
     					close(fd);
