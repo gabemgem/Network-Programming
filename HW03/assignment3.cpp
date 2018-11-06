@@ -135,7 +135,7 @@ void kick(	int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
-			) {}
+			) {
 
 }
 
