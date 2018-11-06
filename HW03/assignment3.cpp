@@ -27,10 +27,9 @@ void addUser(	int fd
 				,std::unordered_map<int, std::string> &users
 				) {
 
-	//ADD CHECKNAME
-
-
-
+    if(name.find_first_of('#')!=stind::npos) {	//ADD CHECKNAME
+        return;
+    }
 	std::pair<int, std::string> userPair(fd, name);
 	users.insert(userPair);
 	sprintf(buffer, "Welcome, %s", name.c_str());
@@ -58,6 +57,32 @@ void quit(	int fd
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
 			) {
+    std::unordered_map<std::string, std::vector<int> >::iterator channel_it = channels.begin();
+    while(channel_it!=channels.end()) {
+        std::vector<int>::iterator chit = channel_it->second.begin();
+        while(chit!=channel_it->second.end()) {
+            if(*chit==fd)
+                chit = channel_it->second.erase(chit);
+            else
+                advance(chit, 1);
+        }
+    }
+
+    std::unordered_map<int, std::string>::iterator users_it = users.begin();
+    while(users_it!=users.end()) {
+        if(users_it->first==fd)
+            chit = users.erase(chit);
+        else
+            advance(chit, 1);
+    }
+
+    std::vector<int>::iterator op_it = operators.begin();
+    while(op_it!=operators.end()) {
+        if(*op_it==fd)
+            op_it = operators.erase(op_it);
+        else
+            advance(op_it, 1);
+    }
 
 }
 
@@ -66,10 +91,32 @@ void list(	int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
+
+    std::unordered_map<int, std::string>::iterator itr;
+	if(comm.size()==0 || comm[0]!='#') {
+        std::string message = "There are currently "+channels.size()+" channels.";
+        send(fd, message.c_str(), strlen(message.c_str()), 0);
+        for(itr = channels.begin(); itr!=channels.end(); itr++) {
+            message = "* " +itr->first.substr(1);
+            send(fd, message.c_str(), strlen(message.c_str()), 0);
+        }
+        return;
+    }
+
+	itr = channels.find(comm);
+    if(itr == channels.end()) {
+        std::string message = "There are currently "+channels.size()+" channels.";
+        send(fd, message.c_str(), strlen(message.c_str()), 0);
+        for(itr = channels.begin(); itr!=channels.end(); itr++) {
+            message = "* " +itr->first.substr(1);
+            send(fd, message.c_str(), strlen(message.c_str()), 0);
+        }
+        return;
+    }
+
+	std::vector<int> userlist = itr->second;
 	
-	std::unordered_map<int, std::string>::iterator itr;
-	std::vector<int> userlist = (std::vector<int>)(channels.find(comm))->second;
-	std::string message = "Users in channel "+comm+":\n";
+    std::string message = "There are currently "+userlist.size()+" members.\n"+comm+" members: ";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 	std::unordered_map<int, std::string>::iterator itr2;
@@ -84,8 +131,9 @@ void list(	int fd
 			perror("List User Not Found");
 			return;
 		}
-		send(fd, name.c_str(), strlen(name.c_str()), 0);
+		send(fd, (name+" ").c_str(), strlen((name+" ").c_str()), 0);
 	}
+    send(fd, "\n", 1, 0);
 
 
 
@@ -96,7 +144,7 @@ void join(int fd
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
-	if (channels.find(comm) != channels.end())
+	if (channels.find(comm) == channels.end())
 	{
 		std::vector<int> v;
 		v.push_back(fd);
@@ -109,34 +157,50 @@ void join(int fd
 	
 }
 
+bool removeFromChannel(int fd
+                        , std::string ch
+                        , std::unordered_map<std::string, std::vector<int> > channels
+                        , std::unordered_map<int, std::string> users
+                        ) {
+    std::unordered_map<std::string, std::vector<int> >::iterator it = channels.find(ch);
+
+    if(it = channels.end())
+        return;
+
+    std::string name = users[fd];
+    std::vector<int>::iterator it2 = it->second.begin();
+    while(it2!=it->second.end()) {
+        if(*it2==fd) {
+            it->second.erase(it2);
+            std::string message = name+" left the channel.";
+            sendToChannel(message, it->second);
+            return true;
+        }
+    }
+    return false;
+    
+}
+
 void part(int fd
 			, std::string comm
 			, std::unordered_map<std::string, std::vector<int> > channels
 			, std::unordered_map<int, std::string> users
 			) {
+
+    if(comm.size()==0) {
+        for(std::pair<std::string, std::vector<int> > ch : channels) {
+            removeFromChannel(fd, ch->first, channels, users);
+        }
+    }
+
 	std::unordered_map<std::string, std::vector<int> >::iterator itr = channels.find(comm);
 	if (itr != channels.end()) {
-		//Channel Exists
-		std::vector<int> v = itr->second;		
-		std::vector<int>::iterator itr2;
-		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
-			if (*itr2 == fd) {
-				v.erase(itr2);
-				return;
-			}
-		}
-
-		std::string message = "You are not a part of this channel\n";
-		send(fd, message.c_str(), strlen(message.c_str()), 0);
-
+        if(!removeFromChannel(fd, itr->first, channels, users)) {
+            //Print channel does not exist
+            std::string message = "You are not currently in "+comm+".";
+            send(fd, message.c_str(), strlen(message.c_str()), 0);
+        }
 	}
-
-	else {
-		//Print channel does not exist
-		std::string message = "That Channel does not exist";
-		send(fd, message.c_str(), strlen(message.c_str()), 0);
-	}
-	return;
 }
 
 void op(int fd
@@ -152,11 +216,22 @@ void kick(	int fd
 			, std::unordered_map<int, std::string> users
 			, std::vector<int> operators
 			) {
-<<<<<<< HEAD
-=======
-				
+
 	int space = comm.find_first_of(' ');
     std::string channel = comm.substr(0, space);
+    if(channel[0]!='#') {
+        return;
+    }
+    bool isOp = false;
+    for(unsigned int i=0; i<operators.size(); i++) {
+        if(operators[i]==fd) {
+            isOp=true;
+            break;
+        }
+    }
+    if(!isOp) {
+        return;
+    }
 	std::string name = comm.substr(space+1);
 	int namefd;
 	std::string message;
@@ -174,8 +249,6 @@ void kick(	int fd
 		send(fd, message.c_str(), strlen(message.c_str()), 0);
 		return;
 	}
-
->>>>>>> aa5aa56e9ecf01e2f07dc3d35cb558d663c5270d
 
 	std::unordered_map<std::string, std::vector<int> >::iterator channel_itr = channels.find(channel);
 
