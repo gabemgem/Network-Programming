@@ -146,17 +146,20 @@ bool removeFromChannel(int fd
 
     std::string name = (*users)[fd];
     std::vector<int>::iterator it2 = (*(it->second)).begin();
-    while(it2!=(*(it->second)).end()) {
+
+    for(; it2!=(*(it->second)).end(); it2++) {
+
         if(*it2==fd) {
+            printf("A\n");
             std::string message = ch+"> "+name+" left the channel.\n";
             sendToChannel(message, *(it->second));
-            *(it->second)->erase(it2);
+            (*(it->second)).erase(it2);
+
             return true;
         }
-        else {
-            advance(it, 1);
-        }
+        
     }
+
     return false;
     
 }
@@ -166,32 +169,37 @@ void quit(  int fd
             , std::unordered_map<int, std::string>* users
             , std::vector<int>* operators
             ) {
-    printf("0/3 of quit.\n");
-    std::unordered_map<std::string, std::vector<int>* >::iterator channel_it;
-    for(channel_it = (*channels).begin(); channel_it!=(*channels).end(); channel_it++) {
+
+    std::unordered_map<std::string, std::vector<int>* >::iterator channel_it = (*channels).begin();
+    for(; channel_it!=(*channels).end(); channel_it++) {
         removeFromChannel(fd, channel_it->first, channels, users);
     }
-    printf("1/3 of quit.\n");
-    std::unordered_map<int, std::string>::iterator users_it;
-    for(users_it=(*users).begin(); users_it!=(*users).end(); advance(users_it, 1)) {
+
+
+    std::unordered_map<int, std::string>::iterator users_it = (*users).begin();
+    printf("A");
+    while(users_it!=(*users).end()) {
         printf("1");
         if(users_it->first==fd) {
             printf("2");
             users_it = (*users).erase(users_it);
             printf("3");
-            if(users_it!=(*users).begin())
-                users_it = std::prev(users_it);
         }
+        else
+            users_it++;
     }
-    printf("\n2/3 of quit.\n");
-    std::vector<int>::iterator op_it;
-    for(op_it = (*operators).begin(); op_it!=(*operators).end(); op_it++) {
+    
+
+    std::vector<int>::iterator op_it = (*operators).begin();
+    while(op_it!=(*operators).end()) {
         if(*op_it==fd) {
             op_it = (*operators).erase(op_it);
-            op_it = std::prev(op_it);
+        }
+        else {
+            op_it++;
         }
     }
-    printf("3/3 of quit.\n");
+
 }
 
 void kickFromChannel(int fd
