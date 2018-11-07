@@ -53,39 +53,7 @@ void invalidCommand(int fd
 
 }
 
-void quit(	int fd
-			, std::unordered_map<std::string, std::vector<int>* >* channels
-			, std::unordered_map<int, std::string>* users
-			, std::vector<int>* operators
-			) {
-    std::unordered_map<std::string, std::vector<int>* >::iterator channel_it = (*channels).begin();
-    while(channel_it!=(*channels).end()) {
-        std::vector<int>::iterator chit = (*(channel_it->second)).begin();
-        while(chit!=(*(channel_it->second)).end()) {
-            if(*chit==fd)
-                chit = (*(channel_it->second)).erase(chit);
-            else
-                chit++;
-        }
-    }
 
-    std::unordered_map<int, std::string>::iterator users_it = (*users).begin();
-    while(users_it!=(*users).end()) {
-        if(users_it->first==fd)
-            users_it = (*users).erase(users_it);
-        else
-            users_it++;
-    }
-
-    std::vector<int>::iterator op_it = (*operators).begin();
-    while(op_it!=(*operators).end()) {
-        if(*op_it==fd)
-            op_it = (*operators).erase(op_it);
-        else
-            op_it++;
-    }
-
-}
 
 void list(	int fd
 			, std::string comm
@@ -185,9 +153,45 @@ bool removeFromChannel(int fd
             *(it->second)->erase(it2);
             return true;
         }
+        else {
+            advance(it, 1);
+        }
     }
     return false;
     
+}
+
+void quit(  int fd
+            , std::unordered_map<std::string, std::vector<int>* >* channels
+            , std::unordered_map<int, std::string>* users
+            , std::vector<int>* operators
+            ) {
+    printf("0/3 of quit.\n");
+    std::unordered_map<std::string, std::vector<int>* >::iterator channel_it;
+    for(channel_it = (*channels).begin(); channel_it!=(*channels).end(); channel_it++) {
+        removeFromChannel(fd, channel_it->first, channels, users);
+    }
+    printf("1/3 of quit.\n");
+    std::unordered_map<int, std::string>::iterator users_it;
+    for(users_it=(*users).begin(); users_it!=(*users).end(); advance(users_it, 1)) {
+        printf("1");
+        if(users_it->first==fd) {
+            printf("2");
+            users_it = (*users).erase(users_it);
+            printf("3");
+            if(users_it!=(*users).begin())
+                users_it = std::prev(users_it);
+        }
+    }
+    printf("\n2/3 of quit.\n");
+    std::vector<int>::iterator op_it;
+    for(op_it = (*operators).begin(); op_it!=(*operators).end(); op_it++) {
+        if(*op_it==fd) {
+            op_it = (*operators).erase(op_it);
+            op_it = std::prev(op_it);
+        }
+    }
+    printf("3/3 of quit.\n");
 }
 
 void kickFromChannel(int fd
