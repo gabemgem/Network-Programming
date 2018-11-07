@@ -47,8 +47,8 @@ void sendToChannel(	std::string message
 }
 
 void invalidCommand(int fd
+                    , std::string message = "Invalid command.\n"
 					) {
-	std::string message = "Invalid command.\n";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
 
 }
@@ -163,10 +163,14 @@ void join(int fd
 	
 }
 
+#define PART 1
+#define KICK 2
+
 bool removeFromChannel(int fd
                         , std::string ch
                         , std::unordered_map<std::string, std::vector<int>* >* channels
                         , std::unordered_map<int, std::string>* users
+                        , int remove_type=PART
                         ) {
     std::unordered_map<std::string, std::vector<int>* >::iterator it = (*channels).find(ch);
 
@@ -177,9 +181,11 @@ bool removeFromChannel(int fd
     std::vector<int>::iterator it2 = (*(it->second)).begin();
     while(it2!=(*(it->second)).end()) {
         if(*it2==fd) {
-            *(it->second)->erase(it2);
-            std::string message = name+" left the channel.";
+            std::string message = ch+"> "+name+" left the channel.\n";
+            if(remove_type==KICK)
+                std::string message = ch+"> "+name+" has been kicked from the channel.\n";
             sendToChannel(message, *(it->second));
+            *(it->second)->erase(it2);
             return true;
         }
     }
@@ -275,11 +281,7 @@ void kick(	int fd
 		std::vector<int>::iterator itr2;
 		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
 			if (namefd == *itr2) {
-				std::string message = "An operator has kicked you from "+channel+".\n";
-				send(*itr2, message.c_str(), strlen(message.c_str()), 0);
-				v.erase(itr2);
-				message = name+" was successfully removed from "+channel+".\n";
-				send(fd, message.c_str(), strlen(message.c_str()), 0);
+				removeFromChannel(namefd, channel, channels, users, KICK);
 				return;
 			}
 		}
@@ -304,19 +306,28 @@ void privmsg(	int fd
 	int space = comm.find_first_of(' ');
     std::string receiver = comm.substr(0, space);
 	std::string message = comm.substr(space+1);
-	std::unordered_map<std::string, std::vector<int>* >::iterator itr = (*channels).find(receiver);
-	if (itr != (*channels).end()) {
-		sendToChannel(message, *(itr->second));
-		return;
-	}
-
-	std::unordered_map<int, std::string>::iterator itr2;
-	for (itr2 = (*users).begin(); itr2 != (*users).end(); itr2++) {
-		if (itr2->second == receiver) {
-			send(itr2->first, message.c_str(), strlen(message.c_str()), 0);
-			return;
-		}
-	}
+    if(receiver[0]=='#') {
+        std::unordered_map<std::string, std::vector<int>* >::iterator itr = (*channels).find(receiver);
+        if (itr != (*channels).end()) {
+            message = receiver+"> "+message+"\n";
+            sendToChannel(message, *(itr->second));
+            return;
+        }
+    }
+	
+    else{
+        std::unordered_map<int, std::string>::iterator itr2;
+        for (itr2 = (*users).begin(); itr2 != (*users).end(); itr2++) {
+            if (itr2->second == receiver) {
+                std::string mess1 = receiver+">> "+message+"\n";
+                std::string mess2 = "<<"+(*users)[fd]+" "+message+"\n";
+                send(fd, mess1.c_str(), strlen(mess1.c_str()), 0);
+                send(itr2->first, mess2.c_str(), strlen(mess2.c_str()), 0);
+                return;
+            }
+        }
+    }
+	
 	
 	message = "No user or channel of that name.\n";
 	send(fd, message.c_str(), strlen(message.c_str()), 0);
@@ -384,6 +395,7 @@ int main(int argc, char* argv[]) {
     std::vector<int> operators;
 
     FD_ZERO(&allset);
+    FD_ZERO(&rset);
     FD_SET(listenfd, &allset);
     int nready = 0;
     int readlen = 0;
@@ -396,7 +408,9 @@ int main(int argc, char* argv[]) {
 
     	//If there is a new connection
     	if(FD_ISSET(listenfd, &rset)) {
-    		if((connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &addrlen)) < 0) {
+    		read(listenfd, buffer, 512);
+            printf("Read from listen: %s\n", buffer);
+            if((connfd = accept(listenfd, (struct sockaddr*)&cliaddr, &addrlen)) < 0) {
     			perror("Error on accept");
     			exit(EXIT_FAILURE);
     		}
@@ -441,9 +455,8 @@ int main(int argc, char* argv[]) {
     					
     				}
     				else {/*INVALID COMMAND*/
-    					memset(buffer, 0, 512);
-    					strcpy(buffer, "Invalid command, please identify yourself with USER.\n");
-    					send(fd, buffer, strlen(buffer), 0);
+                        std::string message = "Invalid command, please identify yourself with USER.\n";
+                        invalidCommand(fd, message);
     					FD_CLR(fd, &allset);
     					close(fd);
     				}
