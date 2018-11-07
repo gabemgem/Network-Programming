@@ -515,16 +515,16 @@ int main(int argc, char* argv[]) {
     			memset(buffer, 0, 512);
     			readlen = read(fd, buffer, 512);
 
-                std::string buff(buffer, readlen-1);
-                std::cout<<"Responding to command:\n"+buff+"\n";
-
-    			if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
+                if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
                     printf("Goodbye %s.\n", users[fd].c_str());
-    				quit(fd, &channels, &users, &operators);
+                    quit(fd, &channels, &users, &operators);
                     FD_CLR(fd, &allset);
                     close(fd);
                 }
+
     			else {
+                    std::string buff(buffer, readlen-1);
+                    std::cout<<"Responding to command:\n"+buff+"\n";
     				unsigned int space = buff.find_first_of(' ');
 
     				std::string temp = buff.substr(0, space);
