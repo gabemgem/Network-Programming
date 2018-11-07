@@ -113,17 +113,17 @@ void join(int fd
 			, std::unordered_map<std::string, std::vector<int>* >* channels
 			, std::unordered_map<int, std::string>* users
 			) {
-    printf("Joining to channel: %s\n", comm.c_str());
+
 	if ((*channels).find(comm) == (*channels).end())
 	{
-        printf("Didn't find channel.\n");
+
 		std::vector<int> *v = new std::vector<int>();
 		v->push_back(fd);
 		//std::pair<std::string, std::vector<int> > channelPair(comm, v);
 		(*channels)[comm] = v;
 	}
 	else {
-        printf("Found channel.\n");
+
 		(*channels)[comm]->push_back(fd);
         std::string message = (*users)[fd]+" joined the channel.\n";
         sendToChannel(message, *(*channels)[comm]);
@@ -131,8 +131,6 @@ void join(int fd
 	
 }
 
-#define PART 1
-#define KICK 2
 
 bool removeFromChannel(int fd
                         , std::string ch
@@ -177,13 +175,13 @@ void quit(  int fd
 
 
     std::unordered_map<int, std::string>::iterator users_it = (*users).begin();
-    printf("A");
+
     while(users_it!=(*users).end()) {
-        printf("1");
+
         if(users_it->first==fd) {
-            printf("2");
+
             users_it = (*users).erase(users_it);
-            printf("3");
+
         }
         else
             users_it++;
@@ -435,7 +433,6 @@ int main(int argc, char* argv[]) {
 
     while(1) {
 
-        printf("Starting loop.\n");
     	rset = allset;
     	nready = select(FD_SETSIZE, &rset, NULL, NULL, NULL);
 
@@ -453,7 +450,6 @@ int main(int argc, char* argv[]) {
     		FD_SET(connfd, &allset);
     		nready--;
     		if(nready<=0) {
-                printf("Done after listenfd.\n");
     			continue;
             }
     	}
@@ -498,7 +494,6 @@ int main(int argc, char* argv[]) {
                 i = waitingfd.erase(i);/*DELETE FD FROM WAITING VECTOR*/
                 i--;
     			if(nready<=0) {
-                    printf("Done after waitingfd.\n");
     				break;
                 }
     			
@@ -508,7 +503,6 @@ int main(int argc, char* argv[]) {
         if(nready==0) {continue;}
         std::unordered_map<int, std::string>::iterator it;
     	for(it=users.begin(); it!=users.end(); it++) {
-            printf("In reg check loop.\nnready=%d\n", nready);
     		int fd = it->first;
     		if(FD_ISSET(fd, &rset)) {
 
@@ -565,7 +559,6 @@ int main(int argc, char* argv[]) {
 
     			nready--;
     			if(nready<=0) {
-                    printf("Done after reg.\n");
     				break;
                 }
     		}
