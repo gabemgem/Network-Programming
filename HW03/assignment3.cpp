@@ -423,7 +423,7 @@ int main(int argc, char* argv[]) {
 
     while(1) {
 
-        printf("\n");
+        printf("Starting loop.\n");
     	rset = allset;
     	nready = select(FD_SETSIZE, &rset, NULL, NULL, NULL);
 
@@ -487,14 +487,17 @@ int main(int argc, char* argv[]) {
                 i--;
     			if(nready<=0) {
                     printf("Done after waitingfd.\n");
-    				continue;
+    				break;
                 }
     			
     		}
     	}
 
-    	for(std::pair<int, std::string> u : users) {
-    		int fd = u.first;
+        if(nready==0) {continue;}
+        std::unordered_map<int, std::string>::iterator it;
+    	for(it=users.begin(); it!=users.end(); it++) {
+            printf("In reg check loop.\nnready=%d\n", nready);
+    		int fd = it->first;
     		if(FD_ISSET(fd, &rset)) {
 
     			memset(buffer, 0, 512);
@@ -504,9 +507,10 @@ int main(int argc, char* argv[]) {
                 std::cout<<"Responding to command:\n"+buff+"\n";
 
     			if(readlen==0) {/*CLIENT HAS DISCONNECTED*/
-    				quit(fd, &channels, &users, &operators);/**************************************************************/
-    			     FD_CLR(fd, &allset);
-                     close(fd);
+                    printf("Goodbye %s.\n", users[fd].c_str());
+    				quit(fd, &channels, &users, &operators);
+                    FD_CLR(fd, &allset);
+                    close(fd);
                 }
     			else {
     				unsigned int space = buff.find_first_of(' ');
@@ -514,31 +518,31 @@ int main(int argc, char* argv[]) {
     				std::string temp = buff.substr(0, space);
     				if(temp=="LIST") {/*LIST COMMAND*/
                         std::cout<<"LIST\n";
-    					list(fd, buff.substr(space+1), &channels, &users);/*************************************/
+    					list(fd, buff.substr(space+1), &channels, &users);
     				}
     				else if(temp=="JOIN") {/*JOIN COMMAND*/
                         std::cout<<"JOIN\n";
-    					join(fd, buff.substr(space+1), &channels, &users);/*************************************/
+    					join(fd, buff.substr(space+1), &channels, &users);
     				}
     				else if(temp=="PART") {/*PART COMMAND*/
                         std::cout<<"PART\n";
-    					part(fd, buff.substr(space+1), &channels, &users);/*************************************/
+    					part(fd, buff.substr(space+1), &channels, &users);
     				}
     				else if(temp=="OPERATOR") {/*OPERATOR COMMAND*/
                         std::cout<<"OPERATOR\n";
-    					op(fd, buff.substr(space+1), &operators, pass, haspass);/***************************************/
+    					op(fd, buff.substr(space+1), &operators, pass, haspass);
     				}
     				else if(temp=="KICK") {/*KICK COMMAND*/
                         std::cout<<"KICK\n";
-    					kick(fd, buff.substr(space+1), &channels, &users, &operators);/*************************************/
+    					kick(fd, buff.substr(space+1), &channels, &users, &operators);
     				}
     				else if(temp=="PRIVMSG") {/*PRIVMSG COMMAND*/
                         std::cout<<"PRIVMSG\n";
-    					privmsg(fd, buff.substr(space+1), &channels, &users);/**********************************/
+    					privmsg(fd, buff.substr(space+1), &channels, &users);
     				}
     				else if(temp=="QUIT") {/*QUIT COMMAND*/
                         std::cout<<"QUIT\n";
-    					quit(fd, &channels, &users, &operators);/***********************************************************/
+    					quit(fd, &channels, &users, &operators);
     				    FD_CLR(fd, &allset);
                         close(fd);
                     }
@@ -550,7 +554,7 @@ int main(int argc, char* argv[]) {
     			nready--;
     			if(nready<=0) {
                     printf("Done after reg.\n");
-    				continue;
+    				break;
                 }
     		}
     	}
