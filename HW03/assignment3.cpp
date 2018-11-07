@@ -170,7 +170,6 @@ bool removeFromChannel(int fd
                         , std::string ch
                         , std::unordered_map<std::string, std::vector<int>* >* channels
                         , std::unordered_map<int, std::string>* users
-                        , int remove_type=PART
                         ) {
     std::unordered_map<std::string, std::vector<int>* >::iterator it = (*channels).find(ch);
 
@@ -182,14 +181,36 @@ bool removeFromChannel(int fd
     while(it2!=(*(it->second)).end()) {
         if(*it2==fd) {
             std::string message = ch+"> "+name+" left the channel.\n";
-            if(remove_type==KICK)
-                std::string message = ch+"> "+name+" has been kicked from the channel.\n";
             sendToChannel(message, *(it->second));
             *(it->second)->erase(it2);
             return true;
         }
     }
     return false;
+    
+}
+
+void kickFromChannel(int fd
+                        , std::string ch
+                        , std::unordered_map<std::string, std::vector<int>* >* channels
+                        , std::unordered_map<int, std::string>* users
+                        ) {
+    std::unordered_map<std::string, std::vector<int>* >::iterator it = (*channels).find(ch);
+
+    if(it == (*channels).end())
+        return;
+
+    std::string name = (*users)[fd];
+    std::vector<int>::iterator it2 = (*(it->second)).begin();
+    while(it2!=(*(it->second)).end()) {
+        if(*it2==fd) {
+            std::string message = ch+"> "+name+" has been kicked from the channel.\n";
+            sendToChannel(message, *(it->second));
+            *(it->second)->erase(it2);
+            return;
+        }
+    }
+    return;
     
 }
 
@@ -207,7 +228,7 @@ void part(int fd
 
 	std::unordered_map<std::string, std::vector<int>* >::iterator itr = (*channels).find(comm);
 	if (itr != (*channels).end()) {
-        if(!removeFromChannel(fd, itr->first, channels, users)) {
+        if(!removeFromChannel(fd, comm, channels, users)) {
             //Print channel does not exist
             std::string message = "You are not currently in "+comm+".\n";
             send(fd, message.c_str(), strlen(message.c_str()), 0);
@@ -281,7 +302,7 @@ void kick(	int fd
 		std::vector<int>::iterator itr2;
 		for (itr2 = v.begin(); itr2 != v.end(); itr2++) {
 			if (namefd == *itr2) {
-				removeFromChannel(namefd, channel, channels, users, KICK);
+				kickFromChannel(namefd, channel, channels, users);
 				return;
 			}
 		}
