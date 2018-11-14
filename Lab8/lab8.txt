@@ -1,0 +1,23 @@
+1. My browser and the server are using HTTP 1.1
+2. en-US, en;
+3. My ip: 129.161.147.116 The server: 128.119.245.12
+4. 200 OK
+5. Last modified: Fri, 09 Nov 2018
+6. 128 bytes of data (The tcp payload is 486 bytes)
+7. No
+
+8. I do not see an IF-MODIFIED-SINCE line
+9. The server did return the contents because it is included in the text section
+10. There is an IF-MODIFIED-SINCE with Fri, 09 Nov 2018
+11. The response is 304 Not Modified and it did not include the contents of the file
+
+12. One request, it is packet number 12
+13. Packet 18
+14. 200 OK
+15. 4 TCP Segments
+
+16. 3 GET requests all to 128.119.245.12
+but the host for the first image is gaia.cs.umass.edu
+and the host for the second is manic.cs.umass.edu
+
+17. Should be parallel but it was so fast in mine that it looks serial
