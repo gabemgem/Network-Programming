@@ -46,7 +46,7 @@ void sendToTruple(std::string mess, int connfd, threeTuple n) {
     sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&addr, addrlen);
 }
 
-void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::string myName, int myID, int connfd) {
+void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::string myName, int myID, int connfd, int k) {
     int space = comm.find_first_of(' ');
     std::string theirName = comm.substr(0, space);
     int theirPort = atoi(comm.substr(space+1).c_str());
@@ -79,6 +79,8 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     newFriend.name = theirName;
     newFriend.port = theirPort;
     newFriend.id = theirID;
+    if((*table)[d].size()>=k)
+        (*table)[d].pop_front();
     (*table)[d].push_back(newFriend);
 
 }
@@ -260,7 +262,7 @@ int main(int argc, char* argv[]) {
 
             if (comm =="CONNECT") {/*LIST COMMAND*/
                         std::cout<<"CONNECT\n";
-    					connect(line.substr(space+1), &table, name, id, connfd);
+    					connect(line.substr(space+1), &table, name, id, connfd, k);
     				}
             if (comm =="FIND_NODE") {/*LIST COMMAND*/
                         std::cout<<"FIND_NODE\n";
