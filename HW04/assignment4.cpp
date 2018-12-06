@@ -28,10 +28,46 @@ char buffer[512];
 struct threeTuple {
     std::string name;
     int port;
-    char id;
+    int id;
 };
 
-void connect(std::string comm) {
+int dist(int a, int b) {
+    return a^b;
+}
+
+void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::string myName, int myID, int connfd) {
+    int space = comm.find_first_of(' ');
+    std::string theirName = comm.substr(0, space);
+    int theirPort = atoi(comm.substr(space+1).c_str());
+
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(theirName.c_str());
+    addr.sin_port = htons(theirPort);
+
+    std::string mess = "HELLO "+myName+" "+std::to_string(myID);
+    sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&addr, addrlen);
+    
+    bzero(buffer, 512);
+    int len = recvfrom(connfd, buffer, 512, 0, (struct sockaddr*)&addr, &addrlen);
+    std::string temp(buffer, len);
+    
+    space = temp.find_first_of(' ');
+    std::string comm2 = temp.substr(0, space);
+    if(comm2!="MYID")
+        return;
+    
+    int theirID = atoi(temp.substr(space+1).c_str());
+    int d = dist(theirID, myID);
+    if(d>8)
+        return;
+    
+    threeTuple newFriend;
+    newFriend.name = theirName;
+    newFriend.port = theirPort;
+    newFriend.id = theirID;
+    (*table)[d].push_back(newFriend);
 
 }
 
@@ -55,9 +91,7 @@ void store(std::string comm) {
 
 }
 
-int dist(int a, int b) {
-    return a^b;
-}
+
 
 int main(int argc, char* argv[]) {
 
@@ -115,21 +149,31 @@ int main(int argc, char* argv[]) {
             //handle incoming messages
             bzero(buffer, 512);
             printf("Message from UDP Client: \n");
-            recvfrom(connfd, buffer, 512, 0, 
+            len = recvfrom(connfd, buffer, 512, 0, 
                          (struct sockaddr*)&cliaddr, &addrlen); 
-            
-            std::string temp(buffer, 512);
+            printf("%s\n", buffer);
+            std::string temp(buffer, len);
             unsigned int space = temp.find_first_of(' ');
             std::string comm = temp.substr(0, space);
 
             //Send store client data, send MYID message back
             if (comm == "HELLO") {
-                
+                temp = temp.substr(space+1);
+                space = temp.find_first_of(' ');
+                std::string sender_name = temp.substr(0,space);
+                std::string sender_id = temp.substr(space+1);
+                int sender_port = ntohs(cliaddr.sin_port);
+                threeTuple newFriend;
+                newFriend.name = sender_name;
+                newFriend.port = sender_port;
+                newFriend.id = atoi(sender_id.c_str());
+                int d = dist(newFriend.id, id);
+                if(d>8)
+                    break;
+                table[d].push_back(newFriend);
+                sendto(connfd, myid.c_str(), myid.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
             }
-            //Store MYID data in K-bucket
-            else if (comm == "MYID") {
-
-            }
+            
             nready--;
         }
 
@@ -141,7 +185,7 @@ int main(int argc, char* argv[]) {
 
             if (comm =="CONNECT") {/*LIST COMMAND*/
                         std::cout<<"CONNECT\n";
-    					connect(line.substr(space+1));
+    					connect(line.substr(space+1), &table, name, id, connfd);
     				}
             if (comm =="FIND_NODE") {/*LIST COMMAND*/
                         std::cout<<"FIND_NODE\n";
