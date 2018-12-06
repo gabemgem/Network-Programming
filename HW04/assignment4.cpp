@@ -51,6 +51,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     
     bzero(buffer, 512);
     int len = recvfrom(connfd, buffer, 512, 0, (struct sockaddr*)&addr, &addrlen);
+    printf("%s\n", buffer);
     std::string temp(buffer, len);
     
     space = temp.find_first_of(' ');
@@ -91,6 +92,24 @@ void store(std::string comm) {
 
 }
 
+void quit(std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
+    std::string mess = "QUIT "+std::to_string(myID);
+
+    struct sockaddr_in tempaddr;
+    socklen_t addrlen = sizeof(tempaddr);
+
+    for(int i=0; i<9; i++) {
+        for(threeTuple n : (*table)[i]) {
+            bzero(&tempaddr, addrlen);
+            tempaddr.sin_family = AF_INET;
+            tempaddr.sin_addr.s_addr = inet_addr(n.name.c_str());
+            tempaddr.sin_port = htons(n.port);
+
+            sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&tempaddr, addrlen);
+        }
+    }
+}
+
 
 
 int main(int argc, char* argv[]) {
@@ -114,7 +133,7 @@ int main(int argc, char* argv[]) {
 
 	bzero(&servaddr, addrlen);
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");//htonl(INADDR_ANY);
+	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	servaddr.sin_port = htons(port);
 	
 	if(bind(connfd, (struct sockaddr*)&servaddr, addrlen) == -1) {
@@ -122,7 +141,7 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 
-    std::string myid = "MYID "+id;
+    std::string myid = "MYID "+std::to_string(id);
 
     FD_ZERO(&allset);
     FD_ZERO(&rset);
@@ -173,6 +192,18 @@ int main(int argc, char* argv[]) {
                 table[d].push_back(newFriend);
                 sendto(connfd, myid.c_str(), myid.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
             }
+
+            else if (comm == "QUIT") {
+                int theirID = atoi(temp.substr(space+1).c_str());
+                int d = dist(theirID, id);
+                std::list<threeTuple>::iterator i;
+                for(i = table[d].begin(); i!=table[d].end(); ++i) {
+                    if((*i).id==theirID) {
+                        table[d].erase(i);
+                    }
+                }
+
+            }
             
             nready--;
         }
@@ -209,8 +240,9 @@ int main(int argc, char* argv[]) {
     				} 
             if (comm =="QUIT") {/*LIST COMMAND*/
                         std::cout<<"QUIT\n";
-    					//quit(line.substr(space+1));
-                        break;
+    					quit(&table, connfd, id);
+                        close(connfd);
+                        return 0;
     				}             
 
 
