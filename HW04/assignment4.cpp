@@ -35,6 +35,27 @@ int dist(int a, int b) {
     return a^b;
 }
 
+int buck(int dist) {
+    if(dist==0)
+        return 0;
+    if(dist>=1 && dist<2)
+        return 1;
+    if(dist>=2 && dist<4)
+        return 2;
+    if(dist>=4 && dist<8)
+        return 3;
+    if(dist>=8 && dist<16)
+        return 4;
+    if(dist>=16 && dist<32)
+        return 5;
+    if(dist>=32 && dist<64)
+        return 6;
+    if(dist>=64 && dist<128)
+        return 7;
+    if(dist>=128 && dist<256)
+        return 8;
+}
+
 void sendToTruple(std::string mess, int connfd, threeTuple n) {
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
@@ -79,9 +100,9 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     newFriend.name = theirName;
     newFriend.port = theirPort;
     newFriend.id = theirID;
-    if((*table)[d].size()>=k)
-        (*table)[d].pop_front();
-    (*table)[d].push_back(newFriend);
+    if((*table)[buck(d)].size()>=k)
+        (*table)[buck(d)].pop_front();
+    (*table)[buck(d)].push_back(newFriend);
 
 }
 
@@ -107,20 +128,20 @@ void store(std::string comm, std::vector<std::list<threeTuple> >*table, int conn
     int value = atoi(comm.substr(space+1).c_str());
     std::string mess = "STORE"+std::to_string(key)+" "+std::to_string(value);
     int d = dist(key, myID);
-    int size = (*table)[d].size()-1;
+    int size = (*table)[buck(d)].size()-1;
     if(size<0) {
         while(d<9) {
             d++;
-            size = (*table)[d].size()-1;
+            size = (*table)[buck(d)].size()-1;
             if(size>=0)
                 break;
         }
     }
 
-    std::list<threeTuple>::reverse_iterator it = (*table)[d].rbegin();
-    std::list<threeTuple>::reverse_iterator it2 = (*table)[d].rbegin();
+    std::list<threeTuple>::reverse_iterator it = (*table)[buck(d)].rbegin();
+    std::list<threeTuple>::reverse_iterator it2 = (*table)[buck(d)].rbegin();
     int minDist = dist(key, (*it).id);
-    for(; it2!=(*table)[d].rend(); it2++) {
+    for(; it2!=(*table)[buck(d)].rend(); it2++) {
         int tempD = dist(key, (*it2).id);
         if(tempD<minDist) {
             minDist = tempD;
