@@ -35,6 +35,17 @@ int dist(int a, int b) {
     return a^b;
 }
 
+void sendToTruple(std::string mess, int connfd, threeTuple n) {
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    bzero(&addr, addrlen);
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(n.name.c_str());
+    addr.sin_port = htons(n.port);
+
+    sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&addr, addrlen);
+}
+
 void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::string myName, int myID, int connfd) {
     int space = comm.find_first_of(' ');
     std::string theirName = comm.substr(0, space);
@@ -88,24 +99,46 @@ void value(std::string comm) {
 
 }
 
-void store(std::string comm) {
+void store(std::string comm, std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
+    int space = comm.find_first_of(' ');
+    int key = atoi(comm.substr(0, space).c_str());
+    int value = atoi(comm.substr(space+1).c_str());
+    std::string mess = "STORE"+std::to_string(key)+" "+std::to_string(value);
+    int d = dist(key, myID);
+    int size = (*table)[d].size()-1;
+    if(size<0) {
+        while(d<9) {
+            d++;
+            size = (*table)[d].size()-1;
+            if(size>=0)
+                break;
+        }
+    }
+
+    std::list<threeTuple>::reverse_iterator it = (*table)[d].rbegin();
+    std::list<threeTuple>::reverse_iterator it2 = (*table)[d].rbegin();
+    int minDist = dist(key, (*it).id);
+    for(; it2!=(*table)[d].rend(); it2++) {
+        int tempD = dist(key, (*it2).id);
+        if(tempD<minDist) {
+            minDist = tempD;
+            it = it2;
+        }
+    }
+
+    sendToTruple(mess, connfd, *it);
+
 
 }
+
+
 
 void quit(std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
     std::string mess = "QUIT "+std::to_string(myID);
 
-    struct sockaddr_in tempaddr;
-    socklen_t addrlen = sizeof(tempaddr);
-
     for(int i=0; i<9; i++) {
         for(threeTuple n : (*table)[i]) {
-            bzero(&tempaddr, addrlen);
-            tempaddr.sin_family = AF_INET;
-            tempaddr.sin_addr.s_addr = inet_addr(n.name.c_str());
-            tempaddr.sin_port = htons(n.port);
-
-            sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&tempaddr, addrlen);
+            sendToTruple(mess, connfd, n);
         }
     }
 }
@@ -130,6 +163,7 @@ int main(int argc, char* argv[]) {
     int id = atoi(argv[3]);
 
     std::vector<std::list<threeTuple> > table(9); 
+    std::vector<std::pair<int, int> > values;
 
 	bzero(&servaddr, addrlen);
 	servaddr.sin_family = AF_INET;
@@ -204,6 +238,16 @@ int main(int argc, char* argv[]) {
                 }
 
             }
+
+            else if (comm == "STORE") {
+                temp = temp.substr(space+1);
+                space = temp.find_first_of(' ');
+                int key = atoi(temp.substr(0, space).c_str());
+                int value = atoi(temp.substr(space+1).c_str());
+                std::pair<int, int> newStorage(key,value);
+                values.push_back(newStorage);
+                printf("Stored %d with key: %d\n", key, value);
+            }
             
             nready--;
         }
@@ -236,7 +280,7 @@ int main(int argc, char* argv[]) {
     				}    
             if (comm =="STORE") {/*LIST COMMAND*/
                         std::cout<<"STORE\n";
-    					store(line.substr(space+1));
+    					store(line.substr(space+1), &table, connfd, id);
     				} 
             if (comm =="QUIT") {/*LIST COMMAND*/
                         std::cout<<"QUIT\n";
