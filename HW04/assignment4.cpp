@@ -13,6 +13,8 @@
 #include <signal.h>
 #include <time.h>
 #include <ctype.h>
+//#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 //cpp exclusive
 #include <vector>
@@ -56,6 +58,7 @@ int buck(int dist) {
         return 8;
     return -1;
 }
+
 
 void sendToTruple(std::string mess, int connfd, threeTuple n) {
     struct sockaddr_in addr;
@@ -305,8 +308,22 @@ int main(int argc, char* argv[]) {
     int port = atoi(argv[2]);
     connfd = socket(AF_INET, SOCK_DGRAM, 0);
     std::string line;
-    int id = atoi(argv[3]);
+    char* seed = argv[3];
     int k = atoi(argv[4]);
+
+    EVP_MD_CTX *mdctx;
+    const EVP_MD *md;
+    unsigned char idhash[EVP_MAX_MD_SIZE];
+    unsigned int md_len;
+
+    mdctx = EVP_MD_CTX_create();
+    EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL);
+    EVP_DigestUpdate(mdctx, seed, strlen(seed));
+    EVP_DigestFinal_ex(mdctx, idhash, &md_len);
+    EVP_MD_CTX_destroy(mdctx);
+
+    int id = (int) idhash[0];
+
 
     std::vector<std::list<threeTuple> > table(9); 
     std::vector<std::pair<int, int> > values;
@@ -321,7 +338,7 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 
-    std::string myid = "MYID "+std::to_string(id);
+    std::string myid = "MYID "+ std::to_string(id);
 
     FD_ZERO(&allset);
     FD_ZERO(&rset);
