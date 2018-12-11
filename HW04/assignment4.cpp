@@ -335,7 +335,7 @@ void store(std::string comm, std::vector<std::list<threeTuple> >*table, int conn
         return;
 
     threeTuple* cl = closestInBucket(key, &((*table)[b]));
-    sendToTruple(mess, connfd, *it);
+    sendToTruple(mess, connfd, *cl);
 }
 
 
