@@ -136,7 +136,6 @@ void removeFromBucket(int theirID, std::list<threeTuple>* b) {
     for(i = (*b).begin(); i!=(*b).end(); i++) {
         if((*i).id==theirID) {
             (*b).erase(i);
-            return;
         }
     }
 }
@@ -249,7 +248,7 @@ void find_node(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                 removeFromBucket((*cl).id, &((*table)[b]));
                 tv.tv_sec=3;
                 tv.tv_usec=0;
-                continue;
+                break;
             }
             if(FD_ISSET(connfd, &rset)) {
                 printf(">%x %s\n", cl->id, mess.c_str());
@@ -356,7 +355,7 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                     int theirKey = atoi(temp.substr(0, space).c_str());
                     theirKey--;//unused variable - this gets rid of compiler warning
                     int theirValue = atoi(temp.substr(space+1).c_str());
-                    printf("Received %d from  %d\n", theirValue, theirID);
+                    printf("Received %d from %x\n", theirValue, theirID);
                     return;
                 }
             }
@@ -535,9 +534,7 @@ int main(int argc, char* argv[]) {
             else if (comm == "FIND_NODE") {
                 struct sockaddr_in tempAddr;
                 bzero(&tempAddr, addrlen);
-                //int theirID = atoi(temp.substr(space+1).c_str());
                 int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
-                //printf("%d", theirID);
                 int b = buck(dist(theirID, id));
                 int sent = 0;
                 int movement = 0;
