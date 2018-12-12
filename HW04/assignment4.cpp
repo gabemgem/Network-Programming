@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
     EVP_MD_CTX_destroy(mdctx);
 
     int id = (int) idhash[0];
-    printf("%d -> %x\n\n", id, id);
+    printf("My ID: %x\n", id, id);
 
 
     std::vector<std::list<threeTuple> > table(9); 
