@@ -39,9 +39,11 @@ int dist(int a, int b) {
 }
 
 std::string hextoint(std::string hexstr) {
+    int s;
     std::stringstream ss;
     ss << std::hex << hexstr;
-    return ss.str();
+    ss >> s;
+    return std::to_string(s);
 }
 
 int buck(int dist) {
@@ -177,7 +179,10 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     addr.sin_addr.s_addr = inet_addr(theirName.c_str());
     addr.sin_port = htons(theirPort);
 
-    std::string mess = "HELLO "+myName+" "+std::to_string(myID);
+    std::stringstream ss;
+    ss<< std::hex << myID;
+    std::string hexID = ss.str();
+    std::string mess = "HELLO "+myName+" "+ hexID;
     sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&addr, addrlen);
     
     bzero(buffer, 512);
@@ -495,6 +500,7 @@ int main(int argc, char* argv[]) {
 
             //Send store client data, send MYID message back
             if (comm == "HELLO") {
+                
                 temp = temp.substr(space+1);
                 space = temp.find_first_of(' ');
                 std::string sender_name = temp.substr(0,space);
@@ -531,9 +537,11 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "FIND_NODE") {
+                printf("%s", temp.substr(space+1).c_str());
                 struct sockaddr_in tempAddr;
                 bzero(&tempAddr, addrlen);
                 int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
+                printf("%d", theirID);
                 int b = buck(dist(theirID, id));
                 int sent = 0;
                 int movement = 0;
