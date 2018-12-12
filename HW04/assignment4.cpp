@@ -69,6 +69,7 @@ void sendToTruple(std::string mess, int connfd, threeTuple n) {
     addr.sin_port = htons(n.port);
 
     sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&addr, addrlen);
+    
 }
 
 threeTuple* closestInBucket(int theirID, std::list<threeTuple>* bucket) {
@@ -137,6 +138,24 @@ void addToTable(threeTuple n, std::vector<std::list<threeTuple> >*table, int myI
         (*table)[b].pop_front();
     }
     (*table)[b].push_back(n);
+}
+
+threeTuple findThreeTuple(std::string name, std::vector<std::list<threeTuple> >*table) {
+    for(std::list<threeTuple> bucket : *table) {
+        for(std::list<threeTuple>::iterator i=bucket.begin(); i!=bucket.end(); i++) {
+            if(i->name==name) {
+                threeTuple tt = *i;
+                bucket.erase(i);
+                bucket.push_back(tt);
+                return tt;
+            }
+        }
+    }
+    threeTuple notFound;
+    notFound.id=0;
+    notFound.name="";
+    notFound.port=0;
+    return notFound;
 }
 
 void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::string myName, int myID, int connfd, int k) {
@@ -214,15 +233,22 @@ void find_node(std::string comm, std::vector<std::list<threeTuple> >*table, int 
         while(received<k) {
             select(FD_SETSIZE, &rset, NULL, NULL, &tv);
             if(tv.tv_sec==0 && tv.tv_usec==0) {
+                printf("!%x %s\n", cl->id, mess.c_str());
                 removeFromBucket((*cl).id, &((*table)[b]));
+                tv.tv_sec=3;
+                tv.tv_usec=0;
+                continue;
             }
             if(FD_ISSET(connfd, &rset)) {
+                printf(">%x %s\n", cl->id, mess.c_str());
                 bzero(buffer, 512);
                 int l = recvfrom(connfd, buffer, 512, 0, NULL, NULL);
+
                 std::string temp(buffer, l);
                 int space = temp.find_first_of(' ');
                 std::string comm = temp.substr(0,space);
                 if(comm=="NODE") {
+                    printf("<%x %s\n", cl->id, buffer);
                     temp = temp.substr(space+1);
                     space = temp.find_first_of(' ');
                     std::string sender_name = temp.substr(0,space);
@@ -275,15 +301,21 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
         while(received<k) {
             select(FD_SETSIZE, &rset, NULL, NULL, &tv);
             if(tv.tv_sec==0 && tv.tv_usec==0) {
+                printf("!%x %s\n", cl->id, mess.c_str());
                 removeFromBucket((*cl).id, &((*table)[b]));
+                tv.tv_sec=3;
+                tv.tv_usec=0;
+                continue;
             }
             if(FD_ISSET(connfd, &rset)) {
+                printf(">%x %s\n", cl->id, mess.c_str());
                 bzero(buffer, 512);
                 int l = recvfrom(connfd, buffer, 512, 0, NULL, NULL);
                 std::string temp(buffer, l);
                 int space = temp.find_first_of(' ');
                 std::string comm = temp.substr(0,space);
                 if(comm=="NODE") {
+                    printf("<%x %s\n", cl->id, mess.c_str());
                     temp = temp.substr(space+1);
                     space = temp.find_first_of(' ');
                     std::string sender_name = temp.substr(0,space);
@@ -335,7 +367,8 @@ void store(std::string comm, std::vector<std::list<threeTuple> >*table, int conn
         return;
 
     threeTuple* cl = closestInBucket(key, &((*table)[b]));
-    sendToTruple(mess, connfd, *cl);
+    sendToTruple(mess, connfd, *cl); 
+    printf(">%x %s\n", cl->id, mess.c_str());
 }
 
 
@@ -346,6 +379,7 @@ void quit(std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
     for(int i=0; i<9; i++) {
         for(threeTuple n : (*table)[i]) {
             sendToTruple(mess, connfd, n);
+            printf(">%x %s\n", n.id, mess.c_str());
         }
     }
 }
@@ -423,10 +457,18 @@ int main(int argc, char* argv[]) {
         if (FD_ISSET(connfd, &rset)) {
             //handle incoming messages
             bzero(buffer, 512);
-            printf("Message from UDP Client: \n");
             len = recvfrom(connfd, buffer, 512, 0, 
                          (struct sockaddr*)&cliaddr, &addrlen); 
-            printf("%s\n", buffer);
+            char str[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &cliaddr.sin_addr, str, INET_ADDRSTRLEN);
+            std::string theirName(str);
+            threeTuple them = findThreeTuple(theirName, &table);
+            if(them.port==0) {
+                printf("<? %s\n", buffer);
+            }
+            else {
+                printf("<%x %s\n", them.id, buffer);
+            }
             std::string temp(buffer, len);
             int space = temp.find_first_of(' ');
             std::string comm = temp.substr(0, space);
@@ -444,6 +486,7 @@ int main(int argc, char* argv[]) {
                 newFriend.id = atoi(sender_id.c_str());
                 addToTable(newFriend, &table, id, k);
                 sendto(connfd, myid.c_str(), myid.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                printf(">%x %s\n", newFriend.id, myid.c_str());
             }
 
             else if (comm == "QUIT") {
@@ -465,7 +508,6 @@ int main(int argc, char* argv[]) {
                 int value = atoi(temp.substr(space+1).c_str());
                 std::pair<int, int> newStorage(key,value);
                 values.push_back(newStorage);
-                printf("Stored %d with key: %d\n", key, value);
             }
 
             else if (comm == "FIND_NODE") {
@@ -482,6 +524,7 @@ int main(int argc, char* argv[]) {
                             threeTuple* n = closestInBucketWithRemove(theirID, &bucket);
                             std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+std::to_string(n->id);
                             sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                            printf(">%x %s\n", theirID, mess.c_str());
                             sent++;
                         }
                     }
@@ -496,6 +539,7 @@ int main(int argc, char* argv[]) {
                             if(b<0 || b>8) {
                                 std::string mess = "NODE 0 0 0";
                                 sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                                printf(">%x, %s\n", theirID, mess.c_str());
                                 sent=k;
                             }
                         }
@@ -513,6 +557,12 @@ int main(int argc, char* argv[]) {
                     if(kv.first == theirKey) {
                         std::string mess = "VALUE"+std::to_string(id)+" "+std::to_string(kv.first)+" "+std::to_string(kv.second);
                         sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                        if(them.port==0) {
+                            printf(">? %s\n", mess.c_str());
+                        }
+                        else {
+                            printf(">%x %s\n", them.id, mess.c_str());
+                        }
                         hasKey=true;
                         break;
                     }
@@ -528,6 +578,12 @@ int main(int argc, char* argv[]) {
                                 threeTuple* n = closestInBucketWithRemove(theirKey, &bucket);
                                 std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+std::to_string(n->id);
                                 sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                                if(them.port==0) {
+                                    printf(">? %s\n", mess.c_str());
+                                }
+                                else {
+                                    printf(">%x %s\n", them.id, mess.c_str());
+                                }
                                 sent++;
                             }
                         }
@@ -542,6 +598,12 @@ int main(int argc, char* argv[]) {
                                 if(b<0 || b>8) {
                                     std::string mess = "NODE 0 0 0";
                                     sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
+                                    if(them.port==0) {
+                                        printf(">? %s\n", mess.c_str());
+                                    }
+                                    else {
+                                        printf(">%x %s\n", them.id, mess.c_str());
+                                    }
                                     sent=k;
                                 }
                             }
