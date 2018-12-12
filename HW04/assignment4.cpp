@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <time.h>
 #include <ctype.h>
+#include <bits/stdc++.h>
 //#include <openssl/sha.h>
 #include <openssl/evp.h>
 
@@ -35,6 +36,12 @@ struct threeTuple {
 
 int dist(int a, int b) {
     return a^b;
+}
+
+std::string hextoint(std::string hexstr) {
+    std::stringstream ss;
+    ss << std::hex << hexstr;
+    return ss.str();
 }
 
 int buck(int dist) {
@@ -196,7 +203,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     if(comm2!="MYID")
         return;
     
-    int theirID = atoi(temp.substr(space+1).c_str());
+    int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
     printf("<%x %s\n", theirID, buffer);
     int b = buck(dist(theirID, myID));
     if(b>8)
@@ -211,7 +218,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
 }
 
 void find_node(std::string comm, std::vector<std::list<threeTuple> >*table, int connfd, int myID, int k) {
-    int theirID = atoi(comm.c_str());
+    int theirID = atoi(hextoint(comm).c_str());
     int asked=0, received=0;
     int closestBucket = buck(dist(theirID, myID));
     std::string mess = "FIND_NODE "+comm;
@@ -258,7 +265,7 @@ void find_node(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                     if(sender_port==0) {
                         break;
                     }
-                    int sender_id = atoi(temp.substr(space+1).c_str());
+                    int sender_id = atoi(hextoint(temp.substr(space+1)).c_str());
                     threeTuple newFriend;
                     newFriend.name = sender_name;
                     newFriend.port = sender_port;
@@ -338,7 +345,7 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                 else if(comm=="VALUE") {
                     temp = temp.substr(space+1);
                     space = temp.find_first_of(' ');
-                    int theirID = atoi(temp.substr(0, space).c_str());
+                    int theirID = atoi(hextoint(temp.substr(0, space)).c_str());
                     temp = temp.substr(space+1);
                     space = temp.find_first_of(' ');
                     int theirKey = atoi(temp.substr(0, space).c_str());
@@ -432,7 +439,10 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	}
 
-    std::string myid = "MYID "+ std::to_string(id);
+    std::stringstream ss;
+    ss<< std::hex << id;
+    std::string idhex = ss.str();
+    std::string myid = "MYID "+ idhex;
 
     FD_ZERO(&allset);
     FD_ZERO(&rset);
@@ -488,7 +498,7 @@ int main(int argc, char* argv[]) {
                 temp = temp.substr(space+1);
                 space = temp.find_first_of(' ');
                 std::string sender_name = temp.substr(0,space);
-                std::string sender_id = temp.substr(space+1);
+                std::string sender_id = hextoint(temp.substr(space+1));
                 int sender_port = ntohs(cliaddr.sin_port);
                 threeTuple newFriend;
                 newFriend.name = sender_name;
@@ -500,7 +510,7 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "QUIT") {
-                int theirID = atoi(temp.substr(space+1).c_str());
+                int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
                 int d = dist(theirID, id);
                 std::list<threeTuple>::iterator i;
                 for(i = table[d].begin(); i!=table[d].end(); ++i) {
@@ -523,7 +533,7 @@ int main(int argc, char* argv[]) {
             else if (comm == "FIND_NODE") {
                 struct sockaddr_in tempAddr;
                 bzero(&tempAddr, addrlen);
-                int theirID = atoi(temp.substr(space+1).c_str());
+                int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
                 int b = buck(dist(theirID, id));
                 int sent = 0;
                 int movement = 0;
