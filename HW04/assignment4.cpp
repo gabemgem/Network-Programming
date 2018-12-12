@@ -385,7 +385,10 @@ void store(std::string comm, std::vector<std::list<threeTuple> >*table, int conn
 
 
 void quit(std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
-    std::string mess = "QUIT "+std::to_string(myID);
+    std::stringstream ss;
+    ss<< std::hex << myID;
+    std::string hexID = ss.str();
+    std::string mess = "QUIT "+hexID;
 
     for(int i=0; i<9; i++) {
         for(threeTuple n : (*table)[i]) {
@@ -587,7 +590,13 @@ int main(int argc, char* argv[]) {
                 bool hasKey = false;
                 for(std::pair<int,int> kv : values) {
                     if(kv.first == theirKey) {
-                        std::string mess = "VALUE "+std::to_string(id)+" "+std::to_string(kv.first)+" "+std::to_string(kv.second);
+                        std::stringstream ss;
+                        ss<< std::hex << id;
+                        std::string hexID = ss.str();
+                        std::stringstream ss2;
+                        ss2<< std::hex << kv.first;
+                        std::string hexKey = ss2.str();
+                        std::string mess = "VALUE "+hexID+" "+hexKey+" "+std::to_string(kv.second);
                         sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
                         if(them.port==0) {
                             printf(">? %s\n", mess.c_str());
