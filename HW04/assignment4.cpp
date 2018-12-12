@@ -442,6 +442,8 @@ int main(int argc, char* argv[]) {
     tv.tv_sec = 3;
     tv.tv_usec = 0;
 
+    bool connectAfter=false;
+
     while(1) {
         rset = allset;
         if(tv.tv_sec==0 && tv.tv_usec==0) {
@@ -462,16 +464,23 @@ int main(int argc, char* argv[]) {
             char str[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &cliaddr.sin_addr, str, INET_ADDRSTRLEN);
             std::string theirName(str);
+            int theirPort = ntohs(cliaddr.sin_port);
             threeTuple them = findThreeTuple(theirName, &table);
+
+            std::string temp(buffer, len);
+            int space = temp.find_first_of(' ');
+            std::string comm = temp.substr(0, space);
+
             if(them.port==0) {
                 printf("<? %s\n", buffer);
+                if(comm!="HELLO") {
+                    connectAfter=true;
+                }
+                
             }
             else {
                 printf("<%x %s\n", them.id, buffer);
             }
-            std::string temp(buffer, len);
-            int space = temp.find_first_of(' ');
-            std::string comm = temp.substr(0, space);
 
             //Send store client data, send MYID message back
             if (comm == "HELLO") {
@@ -611,6 +620,13 @@ int main(int argc, char* argv[]) {
                         
                     }
                 }
+            }
+
+            if(connectAfter) {
+                connectAfter=false;
+                sleep(2);
+                std::string connectComm = theirName+" "+std::to_string(theirPort);
+                connect(connectComm, &table, name, id, connfd, k);
             }
             
             nready--;
