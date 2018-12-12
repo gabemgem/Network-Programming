@@ -337,7 +337,7 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                     if(sender_port==0) {
                         break;
                     }
-                    int sender_id = atoi(temp.substr(space+1).c_str());
+                    int sender_id = atoi(hextoint(temp.substr(space+1)).c_str());
                     threeTuple newFriend;
                     newFriend.name = sender_name;
                     newFriend.port = sender_port;
@@ -588,7 +588,7 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "FIND_DATA") {
-                int theirKey = atoi(temp.substr(space+1).c_str());
+                int theirKey = atoi(hextoint(temp.substr(space+1)).c_str());
                 bool hasKey = false;
                 for(std::pair<int,int> kv : values) {
                     if(kv.first == theirKey) {
@@ -619,7 +619,10 @@ int main(int argc, char* argv[]) {
                             std::list<threeTuple> bucket(table[b]);
                             while(sent<k && bucket.size()>0) {
                                 threeTuple* n = closestInBucketWithRemove(theirKey, &bucket);
-                                std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+std::to_string(n->id);
+                                std::stringstream ss;
+                                ss<< std::hex << n->id;
+                                std::string hexID = ss.str();
+                                std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+hexID;
                                 sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
                                 if(them.port==0) {
                                     printf(">? %s\n", mess.c_str());
