@@ -136,6 +136,7 @@ void removeFromBucket(int theirID, std::list<threeTuple>* b) {
     for(i = (*b).begin(); i!=(*b).end(); i++) {
         if((*i).id==theirID) {
             (*b).erase(i);
+            i--;
         }
     }
 }
@@ -368,9 +369,10 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
 
 void store(std::string comm, std::vector<std::list<threeTuple> >*table, int connfd, int myID) {
     int space = comm.find_first_of(' ');
-    int key = atoi(comm.substr(0, space).c_str());
+    int key = atoi(hextoint(comm.substr(0, space)).c_str());
+    std::string keystring = comm.substr(0,space);
     int value = atoi(comm.substr(space+1).c_str());
-    std::string mess = "STORE "+std::to_string(key)+" "+std::to_string(value);
+    std::string mess = "STORE "+keystring+" "+std::to_string(value);
 
     int closestBucket = buck(dist(key,myID));
     int b = closestFilledBucket(closestBucket, table);
@@ -528,7 +530,7 @@ int main(int argc, char* argv[]) {
             else if (comm == "STORE") {
                 temp = temp.substr(space+1);
                 space = temp.find_first_of(' ');
-                int key = atoi(temp.substr(0, space).c_str());
+                int key = atoi(hextoint(temp.substr(0, space)).c_str());
                 int value = atoi(temp.substr(space+1).c_str());
                 std::pair<int, int> newStorage(key,value);
                 values.push_back(newStorage);
