@@ -198,8 +198,8 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     
     int theirID = atoi(temp.substr(space+1).c_str());
     printf("<%x %s\n", theirID, buffer);
-    int d = dist(theirID, myID);
-    if(d>8)
+    int b = buck(dist(theirID, myID));
+    if(b>8)
         return;
     
     threeTuple newFriend;
