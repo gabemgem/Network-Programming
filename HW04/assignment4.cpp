@@ -537,11 +537,11 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "FIND_NODE") {
-                printf("%s", temp.substr(space+1).c_str());
+                //printf("%s", temp.substr(space+1).c_str());
                 struct sockaddr_in tempAddr;
                 bzero(&tempAddr, addrlen);
                 int theirID = atoi(hextoint(temp.substr(space+1)).c_str());
-                printf("%d", theirID);
+                //printf("%d", theirID);
                 int b = buck(dist(theirID, id));
                 int sent = 0;
                 int movement = 0;
