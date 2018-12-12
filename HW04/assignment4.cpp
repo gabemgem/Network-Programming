@@ -305,7 +305,7 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                 removeFromBucket((*cl).id, &((*table)[b]));
                 tv.tv_sec=3;
                 tv.tv_usec=0;
-                continue;
+                break;
             }
             if(FD_ISSET(connfd, &rset)) {
                 printf(">%x %s\n", cl->id, mess.c_str());
@@ -315,7 +315,7 @@ void find_data(std::string comm, std::vector<std::list<threeTuple> >*table, int 
                 int space = temp.find_first_of(' ');
                 std::string comm = temp.substr(0,space);
                 if(comm=="NODE") {
-                    printf("<%x %s\n", cl->id, mess.c_str());
+                    printf("<%x %s\n", cl->id, buffer);
                     temp = temp.substr(space+1);
                     space = temp.find_first_of(' ');
                     std::string sender_name = temp.substr(0,space);
@@ -359,7 +359,7 @@ void store(std::string comm, std::vector<std::list<threeTuple> >*table, int conn
     int space = comm.find_first_of(' ');
     int key = atoi(comm.substr(0, space).c_str());
     int value = atoi(comm.substr(space+1).c_str());
-    std::string mess = "STORE"+std::to_string(key)+" "+std::to_string(value);
+    std::string mess = "STORE "+std::to_string(key)+" "+std::to_string(value);
 
     int closestBucket = buck(dist(key,myID));
     int b = closestFilledBucket(closestBucket, table);
@@ -516,8 +516,6 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "FIND_NODE") {
-                struct sockaddr_in tempAddr;
-                bzero(&tempAddr, addrlen);
                 int theirID = atoi(temp.substr(space+1).c_str());
                 int b = buck(dist(theirID, id));
                 int sent = 0;
@@ -564,13 +562,11 @@ int main(int argc, char* argv[]) {
             }
 
             else if (comm == "FIND_DATA") {
-                struct sockaddr_in tempAddr;
-                bzero(&tempAddr, addrlen);
                 int theirKey = atoi(temp.substr(space+1).c_str());
                 bool hasKey = false;
                 for(std::pair<int,int> kv : values) {
                     if(kv.first == theirKey) {
-                        std::string mess = "VALUE"+std::to_string(id)+" "+std::to_string(kv.first)+" "+std::to_string(kv.second);
+                        std::string mess = "VALUE "+std::to_string(id)+" "+std::to_string(kv.first)+" "+std::to_string(kv.second);
                         sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
                         if(them.port==0) {
                             printf(">? %s\n", mess.c_str());
