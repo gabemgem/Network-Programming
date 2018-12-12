@@ -543,7 +543,10 @@ int main(int argc, char* argv[]) {
                         std::list<threeTuple> bucket(table[b]);
                         while(sent<k && bucket.size()>0) {
                             threeTuple* n = closestInBucketWithRemove(theirID, &bucket);
-                            std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+std::to_string(n->id);
+                            std::stringstream ss;
+                            ss<< std::hex << n->id;
+                            std::string hexID = ss.str();
+                            std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+hexID;
                             sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
                             if(them.port==0) {
                                 printf(">? %s\n", mess.c_str());
