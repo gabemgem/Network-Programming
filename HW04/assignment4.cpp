@@ -501,13 +501,8 @@ int main(int argc, char* argv[]) {
 
             else if (comm == "QUIT") {
                 int theirID = atoi(temp.substr(space+1).c_str());
-                int d = dist(theirID, id);
-                std::list<threeTuple>::iterator i;
-                for(i = table[d].begin(); i!=table[d].end(); ++i) {
-                    if((*i).id==theirID) {
-                        table[d].erase(i);
-                    }
-                }
+                int b = buck(dist(theirID, id));
+                removeFromBucket(theirID, &(table[b]));
 
             }
 
@@ -534,7 +529,12 @@ int main(int argc, char* argv[]) {
                             threeTuple* n = closestInBucketWithRemove(theirID, &bucket);
                             std::string mess = "NODE "+n->name+" "+std::to_string(n->port)+" "+std::to_string(n->id);
                             sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
-                            printf(">%x %s\n", theirID, mess.c_str());
+                            if(them.port==0) {
+                                printf(">? %s\n", mess.c_str());
+                            }
+                            else {
+                                printf(">%x %s\n", them.id, mess.c_str());
+                            }
                             sent++;
                         }
                     }
@@ -549,7 +549,12 @@ int main(int argc, char* argv[]) {
                             if(b<0 || b>8) {
                                 std::string mess = "NODE 0 0 0";
                                 sendto(connfd, mess.c_str(), mess.size(), 0, (struct sockaddr*)&cliaddr, addrlen);
-                                printf(">%x, %s\n", theirID, mess.c_str());
+                                if(them.port==0) {
+                                    printf(">? %s\n", mess.c_str());
+                                }
+                                else {
+                                    printf(">%x %s\n", them.id, mess.c_str());
+                                }
                                 sent=k;
                             }
                         }
