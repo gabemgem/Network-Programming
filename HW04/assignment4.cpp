@@ -133,6 +133,7 @@ void removeFromBucket(int theirID, std::list<threeTuple>* b) {
 }
 
 void addToTable(threeTuple n, std::vector<std::list<threeTuple> >*table, int myID, int k) {
+
     int b = buck(dist(n.id, myID));
     if((*table)[b].size()>=(unsigned int)k) {
         (*table)[b].pop_front();
@@ -187,7 +188,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
         return;
 
     int len = recvfrom(connfd, buffer, 512, 0, (struct sockaddr*)&addr, &addrlen);
-    printf("%s\n", buffer);
+    
     std::string temp(buffer, len);
     
     space = temp.find_first_of(' ');
@@ -196,6 +197,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
         return;
     
     int theirID = atoi(temp.substr(space+1).c_str());
+    printf("<%x %s\n", theirID, buffer);
     int d = dist(theirID, myID);
     if(d>8)
         return;
@@ -204,9 +206,7 @@ void connect(std::string comm, std::vector<std::list<threeTuple> >*table, std::s
     newFriend.name = theirName;
     newFriend.port = theirPort;
     newFriend.id = theirID;
-    if((*table)[buck(d)].size()>=(unsigned int)k)
-        (*table)[buck(d)].pop_front();
-    (*table)[buck(d)].push_back(newFriend);
+    addToTable(newFriend, table, myID, k);
 
 }
 
@@ -416,6 +416,7 @@ int main(int argc, char* argv[]) {
     EVP_MD_CTX_destroy(mdctx);
 
     int id = (int) idhash[0];
+    printf("%d -> %x\n\n", id, id);
 
 
     std::vector<std::list<threeTuple> > table(9); 
@@ -634,28 +635,22 @@ int main(int argc, char* argv[]) {
 
         else if (nready>0 && FD_ISSET(0, &rset)) {//handle incoming commands
             std::getline(std::cin, line);
-            std::cout<<line<<"\n";
             unsigned int space = line.find_first_of(' ');
             std::string comm = line.substr(0, space);  
 
             if (comm =="CONNECT") {/*LIST COMMAND*/
-                        std::cout<<"CONNECT\n";
     					connect(line.substr(space+1), &table, name, id, connfd, k);
     				}
             if (comm =="FIND_NODE") {/*LIST COMMAND*/
-                        std::cout<<"FIND_NODE\n";
     					find_node(line.substr(space+1), &table, connfd, id, k);
     				}
             if (comm =="FIND_DATA") {/*LIST COMMAND*/
-                        std::cout<<"FIND_DATA\n";
     					find_data(line.substr(space+1), &table, connfd, id, k);
     				}    
             if (comm =="STORE") {/*LIST COMMAND*/
-                        std::cout<<"STORE\n";
     					store(line.substr(space+1), &table, connfd, id);
     				} 
             if (comm =="QUIT") {/*LIST COMMAND*/
-                        std::cout<<"QUIT\n";
     					quit(&table, connfd, id);
                         close(connfd);
                         return 0;
